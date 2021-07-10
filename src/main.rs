@@ -8,6 +8,7 @@ use serde_cbor;
 
 mod cose;
 mod dgc;
+mod display;
 
 use crate::cose::RawCOSEMessage;
 use crate::dgc::DigitalGreenCertificate;
@@ -42,6 +43,8 @@ fn main() {
                         let cert: DigitalGreenCertificate = serde_cbor::from_slice(msg.content.as_slice()).unwrap();
 
                         println!("{:?}", cert.hcert[&1]);
+
+                        crate::display::to_human_readable(&cert);
                     }
                     else {
                         print!("Failed to decompress :/");
