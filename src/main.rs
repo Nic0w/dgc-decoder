@@ -5,9 +5,6 @@ use base45;
 use flate2::read::ZlibDecoder;
 
 use serde_cbor;
-use serde_cbor::value::Value;
-
-use serde::Deserialize;
 
 mod cose;
 mod dgc;
@@ -25,13 +22,11 @@ fn main() {
             "HC1" => {
 
                 println!("Detected version: HC1");
-                println!("base45 content: {} ({} bytes)", base45_content, base45_content.len());
+                println!("base45 content: '{}' ({} bytes)", base45_content, base45_content.len());
 
                 if let Ok(decoded_content) = base45::decode(base45_content) {
 
                     println!("Decoded base45 content: {} bytes", decoded_content.len());
-
-                    //println!("{:?}", decoded_content);
 
                     let mut content = vec![];
 
@@ -47,12 +42,6 @@ fn main() {
                         let cert: DigitalGreenCertificate = serde_cbor::from_slice(msg.content.as_slice()).unwrap();
 
                         println!("{:?}", cert.hcert[&1]);
-
-
-                        /*if let Ok(Value::Map(map)) = serde_cbor::from_slice(msg.content.as_slice()) {
-
-                            println!("{:?}", map);
-                        }*/
                     }
                     else {
                         print!("Failed to decompress :/");
@@ -62,7 +51,6 @@ fn main() {
                     println!("Failed to decode base45 string !");
                 }
             }
-
             _ => { println!("Unknown version !"); }
         }
     }

@@ -2,7 +2,6 @@ use std::fmt;
 
 use serde::Deserialize;
 use std::collections::HashMap;
-use serde_cbor::value::Value;
 
 use serde::de::{
     self,
@@ -13,16 +12,29 @@ use serde::de::{
 
 #[derive(Debug, PartialEq)]
 pub struct DigitalGreenCertificate {
+
+    /// Issuer
     pub iss: String,
+
+    /// Issuing Date
     pub iat: u32,
+
+    /// Expiring Date
     pub exp: u32,
+
+    /// Payload
     pub hcert: HashMap<u8, CertificateData>
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct CertificateData {
+    /// Date Of Birth
     dob: String,
+
+    /// Version
     ver: String,
+
+    /// Forename & Surname
     nam: Person,
 
     v: Option<[Vaccine; 1]>,
@@ -48,15 +60,34 @@ pub struct Person {
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Vaccine {
+
+    /// Targeted agent or disease
     tg: String,
+
+    /// type of Vaccine or Prophylaxis
     vp: String,
+
+    /// Medicinal Product
     mp: String,
+
+    /// Marketing Authorization holder
     ma: String,
+
+    /// Dose Number
     dn: u8,
+
+    /// The overall number of doses in a complete vaccination series
     sd: u8,
+
+    /// Date of vaccination
     dt: String,
+    /// Country
     co: String,
+
+    /// Certificate Issuer
     is: String,
+
+    /// Certificate Identifier
     ci: String
 }
 
@@ -100,7 +131,6 @@ impl<'de> Visitor<'de> for FieldVisitor {
             _ => Err(de::Error::unknown_field(&format!("{}", value), FIELDS)),
         }
     }
-
 
     fn visit_i64<E>(self, value: i64) -> Result<Field, E>
     where
