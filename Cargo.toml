@@ -1,13 +1,21 @@
 [package]
 name = "dgc-decoder"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-base45 = ""
-flate2 = ""
-serde_cbor = ""
-serde = { version = "", features = [ "derive" ] }
-serde_bytes = ""
+flate2 = "1.0.22"
+serde_cbor = "0.11.2"
+serde = { version = "1.0.133", features = [ "derive" ] }
+serde_bytes = "0.11.5"
+serde_json = "1.0.75"
+zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
+reqwest = { version = "0.11.9", features = ["blocking", "json"] }
+webpki = "0.22.0"
+asn1_der = "0.7.5"
+image = "0.23.14"
+chrono = { version = "0.4.19", features = ["serde"] }
+base45 = "3.0.0"
+base64 = "0.13.0"
