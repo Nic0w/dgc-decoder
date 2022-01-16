@@ -42,7 +42,7 @@ certificates. It also specifies a transport encoding mechanism in a machine-read
 format (QR), which can be displayed on the screen of a mobile device or printed on a piece of
 paper.
 ```
-https://ec.europa.eu/health/sites/default/files/ehealth/docs/digital-green-certificates_v3_en.pdf
+https://ec.europa.eu/health/sites/default/iles/ehealth/docs/digital-green-certificates_v3_en.pdf
 
 ###  JSON Schema Specification
 https://ec.europa.eu/health/sites/default/files/ehealth/docs/covid-certificate_json_specification_en.pdf
