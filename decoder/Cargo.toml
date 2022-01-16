@@ -1,0 +1,12 @@
+[package]
+name = "decoder"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
+dgc-decoder = { path = "../libdgc" }
+clap = "3.0.7"
+reqwest = "0.11.9"
