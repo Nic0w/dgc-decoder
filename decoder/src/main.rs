@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::path::Path;
 use zbars::prelude::*;
 
-use dgc_decoder::{
+use libdgc::{
     self,
     cwt::VerificationError,
     dgc::{DecodeError, Decoded, DigitalGreenCertificate, SignatureError, Verified},
@@ -45,10 +45,10 @@ fn main() {
 
     let keystore = args.value_of("keystore").map(|text| {
         if let Ok(url) = Url::from_str(text) {
-            dgc_decoder::keystore::load_from_url(url)
+            libdgc::keystore::load_from_url(url)
         }
         else {
-            dgc_decoder::keystore::load_from_file(text)
+            libdgc::keystore::load_from_file(text)
         }
 
     }).transpose().map_err(|e| {
@@ -70,11 +70,11 @@ fn main() {
 }
 
 fn scan_image(image: &str, keystore: &Option<KeyStore>) {
-    use dgc_decoder::cwt::VerificationError::*;
+    use libdgc::cwt::VerificationError::*;
 
 
     println!("Image '{}': ", image);
-    match dgc_decoder::decode_image(image) {
+    match libdgc::decode_image(image) {
         Ok(result) => match result {
             Some(qrcodes) => {
                 for (_, cert) in qrcodes.decoded {

@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
-dgc-decoder = { path = "../libdgc" }
+libdgc = { path = "../libdgc" }
 clap = "3.0.7"
 reqwest = "0.11.9"
