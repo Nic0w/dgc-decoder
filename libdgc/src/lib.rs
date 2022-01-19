@@ -1,4 +1,4 @@
-use std::iter::Iterator;
+use std::{iter::Iterator, alloc::GlobalAlloc};
 use std::path::Path;
 
 use image::ImageError;
@@ -18,8 +18,8 @@ use crate::dgc::{DecodeError, Decoded };
 use zbars::prelude::*;
 use zbars::ZBarErrorType;
 
-pub struct SomeDecoded {
-    pub decoded: Vec<(usize, DigitalGreenCertificate<Decoded>)>,
+pub struct SomeDecoded<'d> {
+    pub decoded: Vec<(usize, DigitalGreenCertificate<'d, Decoded>)>,
     pub failed: Vec<(usize, DecodeError)>,
 }
 
@@ -29,9 +29,9 @@ pub enum ImageDecodingFailure {
     Blah,
 }
 
-type ImageDecodingResult = Result<Option<SomeDecoded>, ImageDecodingFailure>;
+type ImageDecodingResult<'i> = Result<Option<SomeDecoded<'i>>, ImageDecodingFailure>;
 
-pub fn decode_image<P>(image_path: P) -> ImageDecodingResult
+pub fn decode_image<'i, P>(image_path: P) -> ImageDecodingResult<'i>
 where
     P: AsRef<Path>,
 {
@@ -51,16 +51,34 @@ where
         failed: vec![],
     };
 
-    for qrcode in symbol_set.iter().enumerate() {
-        match dgc::from_str(qrcode.1.data()) {
-            Ok(decoded) => result.decoded.push((qrcode.0, decoded)),
-            Err(failure) => result.failed.push((qrcode.0, failure)),
+    //let mut buffers: Vec<Vec<u8>> = vec![_ ; symbol_set.size()];
+
+    let mut buffers: Vec<Vec<u8>> = Vec::new();
+
+    buffers.resize_with(symbol_set.size() as usize , Vec::new);
+
+    let symbols = buffers.iter_mut().zip(symbol_set.iter());
+
+    for (id, (buffer, qrcode)) in symbols.enumerate() {
+
+        match dgc::from_str(qrcode.data(), buffer) {
+
+            Ok(decoded) => {
+
+                println!("{:#?}", decoded.hcert_payload());
+
+                result.decoded.push((id, decoded))
+            
+            },
+
+            Err(failure) => result.failed.push((id, failure)),
         }
     }
 
     if result.decoded.is_empty() && result.failed.is_empty() {
         Ok(None)
     } else {
-        Ok(Some(result))
+        //Ok(Some(result))
+        todo!()
     }
 }

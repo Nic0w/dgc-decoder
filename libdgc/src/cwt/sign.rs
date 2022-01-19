@@ -26,13 +26,13 @@ impl Serialize for Sig {
     }
 }
 
-pub fn get_validation_data(protected: &ByteBuf, content: &ByteBuf) -> Vec<u8> {
+pub fn get_validation_data(protected: &[u8], content: &[u8]) -> Vec<u8> {
     serde_cbor::ser::to_vec_packed(&Sig {
         context: SIGN1_CONTEXT_STRING.into(),
 
-        body_protected: protected.clone(),
+        body_protected: ByteBuf::from(protected),
         external_aad: ByteBuf::with_capacity(0),
-        payload: content.clone(),
+        payload: ByteBuf::from(content),
     })
     .expect("Failed to get Sig structure as bytes.")
 }

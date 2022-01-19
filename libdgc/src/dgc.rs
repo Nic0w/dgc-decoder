@@ -20,18 +20,18 @@ impl State for Decoded {}
 impl State for Verified {}
 
 #[derive(Debug)]
-pub struct SignatureError(pub cwt::VerificationError, pub HCertPayload);
+pub struct SignatureError<'cose>(pub cwt::VerificationError, pub HCertPayload<'cose>);
 
-pub struct DigitalGreenCertificate<T: State> {
+pub struct DigitalGreenCertificate<'buf, T: State> {
     state: T,
 
-    cose_msg: COSE_Sign1,
+    cose_msg: COSE_Sign1<'buf>,
 
-    pub(crate) payload: HCertPayload,
+    pub(crate) payload: HCertPayload<'buf>,
 }
 
-impl<T: State> DigitalGreenCertificate<T> {
-    fn transition<To: State>(self, state: To) -> DigitalGreenCertificate<To> {
+impl<'cose, T: State> DigitalGreenCertificate<'cose, T> {
+    fn transition<To: State>(self, state: To) -> DigitalGreenCertificate<'cose, To> {
         DigitalGreenCertificate {
             state,
             cose_msg: self.cose_msg,
@@ -56,8 +56,8 @@ impl<T: State> DigitalGreenCertificate<T> {
     }
 }
 
-impl DigitalGreenCertificate<Decoded> {
-    pub fn verify_signature(self, keystore: &KeyStore) -> Result<DigitalGreenCertificate<Verified>, SignatureError> {
+impl<'cose> DigitalGreenCertificate<'cose, Decoded> {
+    pub fn verify_signature<'a>(self, keystore: &'a KeyStore) -> Result<DigitalGreenCertificate<'cose, Verified>, SignatureError<'cose>> {
         if let Err(e) = cwt::verify_signature(&self.cose_msg, keystore) {
             return Err(SignatureError(e, self.payload));
         }
@@ -66,7 +66,7 @@ impl DigitalGreenCertificate<Decoded> {
     }
 }
 
-impl DigitalGreenCertificate<Verified> {
+impl<'cose> DigitalGreenCertificate<'cose, Verified> {
     pub(crate) fn inner(&self) -> &CertificateData {
         &self.payload.hcert[&1]
     }
@@ -96,7 +96,7 @@ pub enum DecodeError {
     Unknown2DCodeVersion,
 }
 
-pub fn from_str(s: &str) -> Result<DigitalGreenCertificate<Decoded>, DecodeError> {
+pub fn from_str<'buf>(s: &str, buffer: &'buf mut Vec<u8>) -> Result<DigitalGreenCertificate<'buf, Decoded>, DecodeError> {
     use DecodeError::*;
 
     //Invalid text: couldn't separate version from data.
@@ -106,12 +106,19 @@ pub fn from_str(s: &str) -> Result<DigitalGreenCertificate<Decoded>, DecodeError
         "HC1" => {
             let base45_decoded = base45::decode(data).map_err(Base45DecodingFailed)?;
 
+            let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
+
+            use std::io::Read;
+
+            zlib_decoder.read_to_end(buffer);
+
+
             let cose_msg: COSE_Sign1 =
-                serde_cbor::from_reader(ZlibDecoder::new(base45_decoded.as_slice()))
+                serde_cbor::from_slice(buffer)
                     .map_err(CBORParsingFailed)?; //Failed to decode signed CWT.
 
             let payload: HCertPayload =
-                serde_cbor::from_slice(cose_msg.payload.as_slice()).
+                serde_cbor::from_slice(cose_msg.payload).
                     map_err(CBORParsingFailed)?; //Failed to decode CWT payload.
 
             Ok(DigitalGreenCertificate {

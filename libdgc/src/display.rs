@@ -2,7 +2,7 @@ use std::fmt::{self, Display};
 
 use crate::dgc::{DigitalGreenCertificate, State};
 
-impl<T: State> Display for DigitalGreenCertificate<T> {
+impl<T: State> Display for DigitalGreenCertificate<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cert = &self.payload.hcert[&1];
         let person = &cert.nam;

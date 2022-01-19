@@ -1,6 +1,6 @@
 use std::{
     fmt,
-    collections::HashMap
+    collections::HashMap, marker::PhantomData
 };
 
 use serde::{
@@ -14,9 +14,9 @@ use serde::{
 };
 
 #[derive(Debug, PartialEq)]
-pub struct HCertPayload {
+pub struct HCertPayload<'cose> {
     /// Issuer
-    pub iss: String,
+    pub iss: &'cose str,
 
     /// Issuing Date
     pub iat: u32,
@@ -146,16 +146,18 @@ impl<'de> Visitor<'de> for FieldVisitor {
     }
 }
 
-struct HCertPayloadVisitor;
+struct HCertPayloadVisitor<'v> {
+    _lt: PhantomData<&'v ()>
+}
 
-impl<'de> Visitor<'de> for HCertPayloadVisitor {
-    type Value = HCertPayload;
+impl<'cose, 'de: 'cose> Visitor<'de> for HCertPayloadVisitor<'cose> {
+    type Value = HCertPayload<'cose>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("struct DigitalGreenCertificate")
     }
 
-    fn visit_map<V>(self, mut map: V) -> Result<HCertPayload, V::Error>
+    fn visit_map<V>(self, mut map: V) -> Result<HCertPayload<'cose>, V::Error>
     where
         V: MapAccess<'de>,
     {
@@ -210,11 +212,11 @@ impl<'de> Visitor<'de> for HCertPayloadVisitor {
     }
 }
 
-impl<'de> de::Deserialize<'de> for HCertPayload {
+impl<'cose, 'de: 'cose> de::Deserialize<'de> for HCertPayload<'cose> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_struct("HCertPayload", FIELDS, HCertPayloadVisitor)
+        deserializer.deserialize_struct("HCertPayload", FIELDS, HCertPayloadVisitor { _lt: PhantomData })
     }
 }
