@@ -31,7 +31,7 @@ pub enum ImageDecodingFailure {
 
 type ImageDecodingResult<'i> = Result<Option<SomeDecoded<'i>>, ImageDecodingFailure>;
 
-pub fn decode_image<'i, P>(image_path: P) -> ImageDecodingResult<'i>
+pub fn decode_image<P>(image_path: P, buffers: &mut Vec<Vec<u8>>) -> ImageDecodingResult<'_>
 where
     P: AsRef<Path>,
 {
@@ -51,10 +51,6 @@ where
         failed: vec![],
     };
 
-    //let mut buffers: Vec<Vec<u8>> = vec![_ ; symbol_set.size()];
-
-    let mut buffers: Vec<Vec<u8>> = Vec::new();
-
     buffers.resize_with(symbol_set.size() as usize , Vec::new);
 
     let symbols = buffers.iter_mut().zip(symbol_set.iter());
@@ -63,13 +59,7 @@ where
 
         match dgc::from_str(qrcode.data(), buffer) {
 
-            Ok(decoded) => {
-
-                println!("{:#?}", decoded.hcert_payload());
-
-                result.decoded.push((id, decoded))
-            
-            },
+            Ok(decoded) => result.decoded.push((id, decoded)),
 
             Err(failure) => result.failed.push((id, failure)),
         }
@@ -78,7 +68,6 @@ where
     if result.decoded.is_empty() && result.failed.is_empty() {
         Ok(None)
     } else {
-        //Ok(Some(result))
-        todo!()
+        Ok(Some(result))
     }
 }

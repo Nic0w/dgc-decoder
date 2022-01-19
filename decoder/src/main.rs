@@ -72,9 +72,10 @@ fn main() {
 fn scan_image(image: &str, keystore: &Option<KeyStore>) {
     use libdgc::cwt::VerificationError::*;
 
+    let mut buffers: Vec<_> = vec![];
 
     println!("Image '{}': ", image);
-    match libdgc::decode_image(image) {
+    match libdgc::decode_image(image, &mut buffers) {
         Ok(result) => match result {
             Some(qrcodes) => {
                 for (_, cert) in qrcodes.decoded {
