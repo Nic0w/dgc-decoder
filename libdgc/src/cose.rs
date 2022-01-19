@@ -16,13 +16,13 @@ pub struct COSE_Sign1<'buf> {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Generic_Headers {
+pub struct Generic_Headers<'cose> {
     pub alg: Option<i64>,
     pub crit: Option<Vec<i64>>,
     pub content_type: Option<i64>,
-    pub kid: Option<ByteBuf>,
-    pub iv: Option<ByteBuf>,
-    pub partial_iv: Option<ByteBuf>,
+    pub kid: Option<&'cose Bytes>,
+    pub iv: Option<&'cose Bytes>,
+    pub partial_iv: Option<&'cose Bytes>,
     //pub counter_signature: Option<()>
 }
 
@@ -75,16 +75,19 @@ impl<'de> Visitor<'de> for GenericHeaderFieldVisitor {
     }
 }
 
-struct Generic_HeadersVisitor;
-impl<'de> Visitor<'de> for Generic_HeadersVisitor {
-    type Value = Generic_Headers;
+struct Generic_HeadersVisitor<'c> {
+    _lt: PhantomData<&'c ()>
+}
+
+impl<'c, 'de: 'c> Visitor<'de> for Generic_HeadersVisitor<'c> {
+    type Value = Generic_Headers<'c>;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter
             .write_str("a CBOR Map with up to 7 fields in accordance with RFC8152, Section 3.1")
     }
 
-    fn visit_map<V>(self, mut map: V) -> Result<Generic_Headers, V::Error>
+    fn visit_map<V>(self, mut map: V) -> Result<Generic_Headers<'c>, V::Error>
     where
         V: MapAccess<'de>,
     {
@@ -151,7 +154,7 @@ impl<'de> Visitor<'de> for Generic_HeadersVisitor {
         })
     }
 }
-impl<'de> Deserialize<'de> for Generic_Headers {
+impl<'c, 'de: 'c> Deserialize<'de> for Generic_Headers<'c> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -159,7 +162,7 @@ impl<'de> Deserialize<'de> for Generic_Headers {
         deserializer.deserialize_struct(
             "Generic_Headers",
             GENERIC_HDR_FIELDS,
-            Generic_HeadersVisitor,
+            Generic_HeadersVisitor { _lt: PhantomData}, 
         )
     }
 }
