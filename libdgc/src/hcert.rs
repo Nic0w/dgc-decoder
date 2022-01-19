@@ -25,54 +25,54 @@ pub struct HCertPayload<'cose> {
     pub exp: u32,
 
     /// Payload
-    pub hcert: HashMap<u8, CertificateData>,
+    pub hcert: HashMap<u8, CertificateData<'cose>>,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct CertificateData {
+pub struct CertificateData<'hcert> {
     /// Date Of Birth
-    pub dob: String,
+    pub dob: &'hcert str,
 
     /// Version
-    pub ver: String,
+    pub ver: &'hcert str,
 
     /// Forename & Surname
-    pub nam: Person,
+    pub nam: Person<'hcert>,
 
-    pub v: Option<[Vaccine; 1]>,
+    pub v: Option<[Vaccine<'hcert>; 1]>,
     pub t: Option<[Test; 1]>,
     pub r: Option<[Recovery; 1]>,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Person {
+pub struct Person<'cert> {
     /// Surname
     #[serde(rename = "fn")]
-    pub sn: String,
+    pub sn: &'cert str,
 
     /// Standardized Surname
-    pub fnt: String,
+    pub fnt: &'cert str,
 
     /// Forename
-    pub gn: String,
+    pub gn: &'cert str,
 
     /// Standardized Forename
-    pub gnt: String,
+    pub gnt: &'cert str,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Vaccine {
+pub struct Vaccine<'cert> {
     /// Targeted agent or disease
-    pub tg: String,
+    pub tg: &'cert str,
 
     /// type of Vaccine or Prophylaxis
-    pub vp: String,
+    pub vp: &'cert str,
 
     /// Medicinal Product
-    pub mp: String,
+    pub mp: &'cert str,
 
     /// Marketing Authorization holder
-    pub ma: String,
+    pub ma: &'cert str,
 
     /// Dose Number
     pub dn: u8,
@@ -81,15 +81,15 @@ pub struct Vaccine {
     pub sd: u8,
 
     /// Date of vaccination
-    pub dt: String,
+    pub dt: &'cert str,
     /// Country
-    pub co: String,
+    pub co: &'cert str,
 
     /// Certificate Issuer
-    pub is: String,
+    pub is: &'cert str,
 
     /// Certificate Identifier
-    pub ci: String,
+    pub ci: &'cert str,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
