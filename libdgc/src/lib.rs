@@ -1,4 +1,4 @@
-use std::{iter::Iterator, alloc::GlobalAlloc};
+use std::iter::Iterator;
 use std::path::Path;
 
 use image::ImageError;

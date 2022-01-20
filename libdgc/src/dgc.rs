@@ -23,7 +23,7 @@ impl State for Verified {}
 pub struct SignatureError<'cose>(pub cwt::VerificationError, pub HCertPayload<'cose>);
 
 pub struct DigitalGreenCertificate<'buf, T: State> {
-    state: T,
+    _state: T,
 
     cose_msg: COSE_Sign1<'buf>,
 
@@ -33,7 +33,7 @@ pub struct DigitalGreenCertificate<'buf, T: State> {
 impl<'cose, T: State> DigitalGreenCertificate<'cose, T> {
     fn transition<To: State>(self, state: To) -> DigitalGreenCertificate<'cose, To> {
         DigitalGreenCertificate {
-            state,
+            _state: state,
             cose_msg: self.cose_msg,
             payload: self.payload,
         }
@@ -52,7 +52,7 @@ impl<'cose, T: State> DigitalGreenCertificate<'cose, T> {
     }
 
     pub fn signature_issuer(&self) -> &str {
-        &self.payload.iss
+        self.payload.iss
     }
 }
 
@@ -92,9 +92,27 @@ impl<'cose> DigitalGreenCertificate<'cose, Verified> {
 pub enum DecodeError {
     Base45DecodingFailed(base45::DecodeError),
     CBORParsingFailed(CBORError),
+    DecompressionFailed(std::io::Error),
     InvalidText,
     Unknown2DCodeVersion,
 }
+
+impl From<base45::DecodeError> for DecodeError {
+    fn from(e: base45::DecodeError) -> Self {
+        DecodeError::Base45DecodingFailed(e)
+    }
+}
+impl From<CBORError> for DecodeError {
+    fn from(e: CBORError) -> Self {
+        DecodeError::CBORParsingFailed(e)
+    }
+}
+impl From<std::io::Error> for DecodeError {
+    fn from(e: std::io::Error) -> Self {
+        DecodeError::DecompressionFailed(e)
+    }
+}
+
 
 pub fn from_str<'buf>(s: &str, buffer: &'buf mut Vec<u8>) -> Result<DigitalGreenCertificate<'buf, Decoded>, DecodeError> {
     use DecodeError::*;
@@ -104,25 +122,23 @@ pub fn from_str<'buf>(s: &str, buffer: &'buf mut Vec<u8>) -> Result<DigitalGreen
 
     match version {
         "HC1" => {
-            let base45_decoded = base45::decode(data).map_err(Base45DecodingFailed)?;
+            let base45_decoded = base45::decode(data)?;
 
             let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
 
             use std::io::Read;
 
-            zlib_decoder.read_to_end(buffer);
+            zlib_decoder.read_to_end(buffer)?;
 
 
             let cose_msg: COSE_Sign1 =
-                serde_cbor::from_slice(buffer)
-                    .map_err(CBORParsingFailed)?; //Failed to decode signed CWT.
+                serde_cbor::from_slice(buffer)?; //Failed to decode signed CWT.
 
             let payload: HCertPayload =
-                serde_cbor::from_slice(cose_msg.payload).
-                    map_err(CBORParsingFailed)?; //Failed to decode CWT payload.
+                serde_cbor::from_slice(cose_msg.payload)?; //Failed to decode CWT payload.
 
             Ok(DigitalGreenCertificate {
-                state: Decoded,
+                _state: Decoded,
                 cose_msg,
                 payload,
             })

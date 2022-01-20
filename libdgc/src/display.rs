@@ -28,7 +28,7 @@ impl<T: State> Display for DigitalGreenCertificate<'_, T> {
             writeln!(
                 f,
                 "Targeted disease: {}",
-                translate_disease(&vaccine_data.tg)
+                translate_disease(vaccine_data.tg)
             ).ok();
             writeln!(f).ok();
 
@@ -36,13 +36,13 @@ impl<T: State> Display for DigitalGreenCertificate<'_, T> {
             writeln!(
                 f,
                 "\tName: {}",
-                translate_medicinal_product(&vaccine_data.mp)
+                translate_medicinal_product(vaccine_data.mp)
             ).ok();
-            writeln!(f, "\tType: {}", translate_vaccine_type(&vaccine_data.vp)).ok();
+            writeln!(f, "\tType: {}", translate_vaccine_type(vaccine_data.vp)).ok();
             writeln!(
                 f,
                 "\tManufacturer : {}",
-                translate_marketing_org(&vaccine_data.ma)
+                translate_marketing_org(vaccine_data.ma)
             ).ok();
 
             writeln!(f).ok();

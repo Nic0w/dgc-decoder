@@ -1,4 +1,4 @@
-use serde_bytes::{ByteBuf, Bytes};
+use serde_bytes::Bytes;
 
 use serde::ser::{Serialize, Serializer};
 

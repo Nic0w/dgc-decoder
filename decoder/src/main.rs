@@ -1,13 +1,7 @@
-use std::fmt::Display;
 use std::str::FromStr;
-use std::path::Path;
-use zbars::prelude::*;
 
 use libdgc::{
     self,
-    cwt::VerificationError,
-    dgc::{DecodeError, Decoded, DigitalGreenCertificate, SignatureError, Verified},
-    ImageDecodingFailure, SomeDecoded,
     keystore::{ KeyStore, KeystoreError }
 };
 
@@ -70,7 +64,6 @@ fn main() {
 }
 
 fn scan_image(image: &str, keystore: &Option<KeyStore>) {
-    use libdgc::cwt::VerificationError::*;
 
     let mut buffers: Vec<_> = vec![];
 
@@ -79,40 +72,18 @@ fn scan_image(image: &str, keystore: &Option<KeyStore>) {
         Ok(result) => match result {
             Some(qrcodes) => {
                 for (_, cert) in qrcodes.decoded {
-                    println!("{}", cert);
-                    if let Some(keystore) = keystore {
 
-                       // if cert.verify_signature(keystore).is_ok() {"valid"} else {"invalid"}
+                    println!("{}", cert);
+                    
+                    if let Some(keystore) = keystore {
 
                         println!("Signature is {}.", match cert.verify_signature(keystore) {
 
                             Ok(_) => "valid".to_owned(),
-                            Err(e) => format!("invalid: {:#?}", e)
+                            Err(e) => format!("invalid: {:?}", e.0)
 
                         });
                     }
-
-                    /*match cert.verify_signature() {
-
-                        Err(SignatureError(error, payload)) => match error {
-
-                            DecodingFailed(_) => println!("Decoding error."),
-                            KeyIdNotFound => println!("Missing `kid` field!"),
-                            FetchingKeyFailed(msg) => println!("{}", msg),
-                            BadCertificate => println!("Bad Certificate"),
-                            BadSignature => println!("Bad Signature"),
-                            InvalidSignature(e) => println!("Invalid Signature: {:?}", e)
-
-
-                           //println!("Failed to verify signature for certificate !");
-
-                        }
-
-                        Ok(verified_cert) => {
-
-                            println!("{}", verified_cert);
-                        }
-                    }*/
                 }
 
                 println!("Failed to decode {} certs: ", qrcodes.failed.len());

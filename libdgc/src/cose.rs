@@ -5,7 +5,7 @@ use serde_cbor::value::Value;
 
 use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
-use serde_bytes::{ByteBuf, Bytes};
+use serde_bytes::Bytes;
 
 #[derive(Debug, PartialEq)]
 pub struct COSE_Sign1<'buf> {

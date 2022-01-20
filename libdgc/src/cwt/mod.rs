@@ -60,7 +60,7 @@ pub fn verify_signature(cose_obj: &COSE_Sign1, keystore: &KeyStore) -> Result<()
         .map_err(InvalidSignature)
 }
 
-fn signature_to_der<'s>(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'static str> {
+fn signature_to_der(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'static str> {
     let len = raw_signature.len() / 2;
 
     let mut vec_r = vec![];
