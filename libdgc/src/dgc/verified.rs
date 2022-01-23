@@ -4,8 +4,6 @@ use crate::hcert::{HCertPayload, CertificateData, Person, Vaccine, Test, Recover
 
 use super::{DigitalGreenCertificate, Verified};
 
-
-
 impl<'sign1> DigitalGreenCertificate<Verified<'sign1>> {
 
     pub fn hcert_payload(&self) -> &HCertPayload {
@@ -23,26 +21,30 @@ impl<'sign1> DigitalGreenCertificate<Verified<'sign1>> {
     pub fn signature_issuer(&self) -> &str {
         self.hcert_payload().iss
     }
-}
 
-impl<'s> DigitalGreenCertificate<Verified<'s>> {
     pub(crate) fn inner(&self) -> &CertificateData {
         &self.hcert_payload().hcert[&1]
     }
 
     pub fn person(&self) -> &Person {
-       &self.inner().nam
-    }
-
-    pub fn vaccine_data(&self) -> &Option<[Vaccine; 1]> {
-        &self.inner().v
-    }
-
-    pub fn test_data(&self) -> &Option<[Test; 1]> {
-        &self.inner().t
-    }
-
-    pub fn recovery_data(&self) -> &Option<[Recovery; 1]> {
-        &self.inner().r
-    }
+        &self.inner().nam
+     }
+ 
+     pub fn vaccine_data(&self) -> Option<&Vaccine> {
+        self.inner().v
+            .as_ref()
+            .and_then(|v| v.first())
+     }
+ 
+     pub fn test_data(&self) -> Option<&Test> {
+        self.inner().t
+            .as_ref()
+            .and_then(|t| t.first())
+     }
+ 
+     pub fn recovery_data(&self) -> Option<&Recovery> {
+        self.inner().r
+            .as_ref()
+            .and_then(|r| r.first())
+     }
 }
