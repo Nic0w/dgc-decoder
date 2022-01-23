@@ -1,10 +1,6 @@
 use std::str::FromStr;
 
-use libdgc::{
-    self,
-    keystore::{KeyStore, KeystoreError},
-};
-
+use libkeystore::KeyStore;
 use reqwest::Url;
 
 use clap::{App, Arg, SubCommand};
@@ -41,14 +37,16 @@ fn main() {
         .value_of("keystore")
         .map(|text| {
             if let Ok(url) = Url::from_str(text) {
-                libdgc::keystore::load_from_url(url)
+                libkeystore::load_from_url(url)
             } else {
-                libdgc::keystore::load_from_file(text)
+                libkeystore::load_from_file(text)
             }
         })
         .transpose()
         .map_err(|e| {
-            use KeystoreError::{DownloadError, FileError, ParsingError};
+
+            use libkeystore::KeystoreError::{DownloadError, FileError, ParsingError};
+            
             match e {
                 FileError(inner) => format!("Unable to load keystore from path: {}", inner),
                 DownloadError(inner) => format!("Unable to download keystore: {}", inner),

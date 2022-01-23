@@ -8,7 +8,6 @@ pub mod cwt;
 pub mod dgc;
 pub mod display;
 pub mod hcert;
-pub mod keystore;
 
 use crate::cose::Generic_Headers;
 use crate::dgc::DigitalGreenCertificate;

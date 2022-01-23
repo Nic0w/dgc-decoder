@@ -10,3 +10,4 @@ zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
 libdgc = { path = "../libdgc" }
 clap = "3.0.7"
 reqwest = "0.11.9"
+libkeystore = { path = "../libkeystore" }

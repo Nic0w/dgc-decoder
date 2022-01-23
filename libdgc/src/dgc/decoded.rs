@@ -1,4 +1,5 @@
-use crate::keystore::KeyStore;
+
+use libkeystore::KeyStore;
 
 use super::{error::DecodeError, Decoded, DigitalGreenCertificate, Verified};
 

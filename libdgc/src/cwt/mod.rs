@@ -1,3 +1,4 @@
+use libkeystore::{KeystoreError, KeyStore};
 use serde_cbor::{self, error::Error as CBORError};
 
 mod sign;
@@ -6,8 +7,6 @@ use webpki::ECDSA_P256_SHA256;
 
 use crate::COSE_Sign1;
 use crate::Generic_Headers;
-
-use crate::keystore::{KeyStore, KeystoreError};
 
 use asn1_der::{
     typed::{DerEncodable, SequenceVec},
@@ -40,7 +39,7 @@ pub fn verify_signature(
     let validation_data = sign::get_validation_data(cose_obj.protected, cose_obj.payload);
 
     let cert = keystore
-        .fetch_pubkey(&kid)
+        .pubkey_for_signature(&kid)
         .map_err(PubKeyNotFoundOrInvalid)?;
 
     println!("Fetched key '{}' .", kid);
