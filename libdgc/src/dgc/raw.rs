@@ -55,4 +55,8 @@ impl DigitalGreenCertificate<Raw<'_>> {
 
         Ok(result)
     }
+
+    pub fn buf_len(&self) -> usize {
+        self.state.buffer.len()
+    }
 }

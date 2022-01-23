@@ -1,17 +1,6 @@
-use std::{str::FromStr, marker::PhantomData};
+use std::marker::PhantomData;
 
-use flate2::read::ZlibDecoder;
-
-use chrono::{DateTime, TimeZone, Utc};
-
-use serde_cbor::{self, error::Error as CBORError };
-
-use crate::{
-    cose::{COSE_Sign1, self},
-    keystore::KeyStore,
-    cwt,
-    hcert::{CertificateData, HCertPayload, Person, Recovery, Test, Vaccine},
-};
+use crate::{cose::COSE_Sign1, hcert::HCertPayload};
 
 mod error;
 mod raw;

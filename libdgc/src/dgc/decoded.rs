@@ -19,4 +19,12 @@ impl<'buf> DigitalGreenCertificate<Decoded<'buf>> {
 
         Ok(result)
     }
+
+    pub fn payload_len(&self) -> usize {
+        self.state.cose_msg.payload.len()
+    }
+
+    pub fn signature_len(&self) -> usize {
+        self.state.cose_msg.signature.len()
+    }
 }
