@@ -1,16 +1,8 @@
-use std::{
-    fmt,
-    collections::HashMap, marker::PhantomData
-};
+use std::{collections::HashMap, fmt, marker::PhantomData};
 
 use serde::{
-    de::{
-        self, 
-        Deserializer, 
-        MapAccess, 
-        Visitor
-    },
-    Deserialize
+    de::{self, Deserializer, MapAccess, Visitor},
+    Deserialize,
 };
 
 #[derive(Debug, PartialEq)]
@@ -147,7 +139,7 @@ impl<'de> Visitor<'de> for FieldVisitor {
 }
 
 struct HCertPayloadVisitor<'v> {
-    _lt: PhantomData<&'v ()>
+    _lt: PhantomData<&'v ()>,
 }
 
 impl<'cose, 'de: 'cose> Visitor<'de> for HCertPayloadVisitor<'cose> {
@@ -217,6 +209,10 @@ impl<'cose, 'de: 'cose> de::Deserialize<'de> for HCertPayload<'cose> {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_struct("HCertPayload", FIELDS, HCertPayloadVisitor { _lt: PhantomData })
+        deserializer.deserialize_struct(
+            "HCertPayload",
+            FIELDS,
+            HCertPayloadVisitor { _lt: PhantomData },
+        )
     }
 }

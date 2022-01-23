@@ -1,6 +1,5 @@
 use crate::{cose::COSE_Sign1, cwt::VerificationError};
 
-
 #[derive(Debug)]
 pub enum DecodeError<'c> {
     Base45DecodingFailed(base45::DecodeError),
@@ -26,4 +25,3 @@ impl From<std::io::Error> for DecodeError<'_> {
         DecodeError::DecompressionFailed(e)
     }
 }
-

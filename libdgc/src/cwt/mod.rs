@@ -7,14 +7,11 @@ use webpki::ECDSA_P256_SHA256;
 use crate::COSE_Sign1;
 use crate::Generic_Headers;
 
-use crate::keystore::{ 
-    KeyStore,
-    KeystoreError
-};
+use crate::keystore::{KeyStore, KeystoreError};
 
 use asn1_der::{
     typed::{DerEncodable, SequenceVec},
-    VecBacking
+    VecBacking,
 };
 
 #[derive(Debug)]
@@ -27,7 +24,10 @@ pub enum VerificationError {
     InvalidSignature(webpki::Error),
 }
 
-pub fn verify_signature(cose_obj: &COSE_Sign1, keystore: &KeyStore) -> Result<(), VerificationError> {
+pub fn verify_signature(
+    cose_obj: &COSE_Sign1,
+    keystore: &KeyStore,
+) -> Result<(), VerificationError> {
     use VerificationError::*;
 
     let signature = &cose_obj.signature;
@@ -39,8 +39,9 @@ pub fn verify_signature(cose_obj: &COSE_Sign1, keystore: &KeyStore) -> Result<()
 
     let validation_data = sign::get_validation_data(cose_obj.protected, cose_obj.payload);
 
-    let cert = keystore.fetch_pubkey(&kid).
-        map_err(PubKeyNotFoundOrInvalid)?;
+    let cert = keystore
+        .fetch_pubkey(&kid)
+        .map_err(PubKeyNotFoundOrInvalid)?;
 
     println!("Fetched key '{}' .", kid);
 

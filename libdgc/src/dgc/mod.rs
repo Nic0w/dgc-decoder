@@ -2,14 +2,14 @@ use std::marker::PhantomData;
 
 use crate::{cose::COSE_Sign1, hcert::HCertPayload};
 
+mod decoded;
 mod error;
 mod raw;
-mod decoded;
 mod verified;
 
 pub struct Raw<'r> {
     buffer: Vec<u8>,
-    __ : PhantomData<&'r ()>
+    __: PhantomData<&'r ()>,
 }
 
 pub struct Decoded<'buf> {

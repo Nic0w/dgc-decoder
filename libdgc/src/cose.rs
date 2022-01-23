@@ -1,5 +1,5 @@
-use std::{collections::HashMap, marker::PhantomData};
 use std::fmt;
+use std::{collections::HashMap, marker::PhantomData};
 
 use serde_cbor::value::Value;
 
@@ -26,10 +26,8 @@ pub struct Generic_Headers<'cose> {
     //pub counter_signature: Option<()>
 }
 
-const COSE_SIGN1_FIELDS: &[&str] =
-    &["protected", "unprotected", "payload", "signature"];
-const GENERIC_HDR_FIELDS: &[&str] =
-    &["alg", "crit", "content_type", "kid", "iv", "partial_iv"];
+const COSE_SIGN1_FIELDS: &[&str] = &["protected", "unprotected", "payload", "signature"];
+const GENERIC_HDR_FIELDS: &[&str] = &["alg", "crit", "content_type", "kid", "iv", "partial_iv"];
 
 enum GenericHeaderField {
     ALG,
@@ -76,7 +74,7 @@ impl<'de> Visitor<'de> for GenericHeaderFieldVisitor {
 }
 
 struct Generic_HeadersVisitor<'c> {
-    _lt: PhantomData<&'c ()>
+    _lt: PhantomData<&'c ()>,
 }
 
 impl<'c, 'de: 'c> Visitor<'de> for Generic_HeadersVisitor<'c> {
@@ -162,13 +160,13 @@ impl<'c, 'de: 'c> Deserialize<'de> for Generic_Headers<'c> {
         deserializer.deserialize_struct(
             "Generic_Headers",
             GENERIC_HDR_FIELDS,
-            Generic_HeadersVisitor { _lt: PhantomData}, 
+            Generic_HeadersVisitor { _lt: PhantomData },
         )
     }
 }
 
 struct COSE_Sign1Visitor<'v> {
-    _lt: PhantomData<&'v ()>
+    _lt: PhantomData<&'v ()>,
 }
 
 impl<'buf, 'de: 'buf> Visitor<'de> for COSE_Sign1Visitor<'buf> {
@@ -212,6 +210,10 @@ impl<'buf, 'de: 'buf> Deserialize<'de> for COSE_Sign1<'buf> {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_struct("COSE_Sign1", COSE_SIGN1_FIELDS, COSE_Sign1Visitor {_lt: PhantomData })
+        deserializer.deserialize_struct(
+            "COSE_Sign1",
+            COSE_SIGN1_FIELDS,
+            COSE_Sign1Visitor { _lt: PhantomData },
+        )
     }
 }

@@ -1,18 +1,18 @@
-use std::{iter::Iterator, str::FromStr};
 use std::path::Path;
+use std::{iter::Iterator, str::FromStr};
 
 use image::ImageError;
 
 mod cose;
-pub mod keystore;
 pub mod cwt;
 pub mod dgc;
 pub mod display;
 pub mod hcert;
+pub mod keystore;
 
-use crate::{cose::COSE_Sign1, dgc::Raw};
 use crate::cose::Generic_Headers;
 use crate::dgc::DigitalGreenCertificate;
+use crate::{cose::COSE_Sign1, dgc::Raw};
 
 use zbars::prelude::*;
 use zbars::ZBarErrorType;
@@ -26,9 +26,7 @@ pub enum ImageDecodingFailure {
 
 type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure>;
 
-
 pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i> {
-
     use ImageDecodingFailure::*;
 
     let image = ZBarImage::from_path(image_path).map_err(|e| Blah)?;
@@ -40,7 +38,8 @@ pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i
 
     let symbol_set = scanner.scan_image(&image).map_err(ScannerFailure)?;
 
-    let raw_certs: Result<Vec<_>, _> = symbol_set.iter()
+    let raw_certs: Result<Vec<_>, _> = symbol_set
+        .iter()
         .map(|qrcode| DigitalGreenCertificate::<Raw>::from_str(qrcode.data()))
         .collect();
 

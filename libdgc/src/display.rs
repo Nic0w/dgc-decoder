@@ -12,7 +12,8 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
             f,
             "Digital Green Certificate for {} {} (born {}):",
             person.sn, person.gn, dob
-        ).ok();
+        )
+        .ok();
 
         let days = self.expiring_at() - self.issued_at();
 
@@ -22,14 +23,16 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
             self.issued_at(),
             self.expiring_at(),
             days.num_days()
-        ).ok();
+        )
+        .ok();
 
         if let Some([vaccine_data]) = &cert.v {
             writeln!(
                 f,
                 "Targeted disease: {}",
                 translate_disease(vaccine_data.tg)
-            ).ok();
+            )
+            .ok();
             writeln!(f).ok();
 
             writeln!(f, "Vaccine data:").ok();
@@ -37,26 +40,30 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
                 f,
                 "\tName: {}",
                 translate_medicinal_product(vaccine_data.mp)
-            ).ok();
+            )
+            .ok();
             writeln!(f, "\tType: {}", translate_vaccine_type(vaccine_data.vp)).ok();
             writeln!(
                 f,
                 "\tManufacturer : {}",
                 translate_marketing_org(vaccine_data.ma)
-            ).ok();
+            )
+            .ok();
 
             writeln!(f).ok();
             writeln!(
                 f,
                 "Shot {}/{} done {}.",
                 &vaccine_data.dn, &vaccine_data.sd, &vaccine_data.dt
-            ).ok();
+            )
+            .ok();
 
             writeln!(
                 f,
                 "Certificate issued by {} ({})",
                 &vaccine_data.is, &vaccine_data.co
-            ).ok();
+            )
+            .ok();
         }
 
         writeln!(f)

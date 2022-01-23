@@ -1,56 +1,51 @@
-use std::{str::FromStr, marker::PhantomData};
+use std::{marker::PhantomData, str::FromStr};
 
 use flate2::bufread::ZlibDecoder;
 
 use crate::cose::COSE_Sign1;
 
-use super::{DigitalGreenCertificate, Raw, error::DecodeError, Decoded};
-
+use super::{error::DecodeError, Decoded, DigitalGreenCertificate, Raw};
 
 impl<'r> FromStr for DigitalGreenCertificate<Raw<'r>> {
-
     type Err = DecodeError<'r>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-
         use DecodeError::*;
 
         //Invalid text: couldn't separate version from data.
         let (version, data) = s.split_once(':').ok_or(InvalidText)?;
-    
+
         match version {
             "HC1" => {
                 let base45_decoded = base45::decode(data)?;
-    
+
                 let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
-    
+
                 use std::io::Read;
 
-                let mut buffer:Vec<u8> = Vec::new();
-    
+                let mut buffer: Vec<u8> = Vec::new();
+
                 zlib_decoder.read_to_end(&mut buffer)?;
-    
+
                 Ok(DigitalGreenCertificate {
-                    state: Raw { buffer, __: PhantomData },
+                    state: Raw {
+                        buffer,
+                        __: PhantomData,
+                    },
                 })
             }
-    
+
             _ => Err(Unknown2DCodeVersion),
         }
     }
 }
 
 impl DigitalGreenCertificate<Raw<'_>> {
-
     pub fn decode<'buf>(&'buf self) -> Result<DigitalGreenCertificate<Decoded<'buf>>, DecodeError> {
-
-        let cose_msg: COSE_Sign1 = 
-            serde_cbor::from_slice(self.state.buffer.as_slice())?; //Failed to decode signed CWT.
+        let cose_msg: COSE_Sign1 = serde_cbor::from_slice(self.state.buffer.as_slice())?; //Failed to decode signed CWT.
 
         let result = DigitalGreenCertificate {
-            state: Decoded {
-                cose_msg
-            }
+            state: Decoded { cose_msg },
         };
 
         Ok(result)

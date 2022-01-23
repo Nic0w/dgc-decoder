@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use libdgc::{
     self,
-    keystore::{ KeyStore, KeystoreError }
+    keystore::{KeyStore, KeystoreError},
 };
 
 use reqwest::Url;
@@ -25,7 +25,7 @@ fn main() {
                 .help("Paths of images to scan")
                 .required(true)
                 .min_values(1)
-                .multiple(true)
+                .multiple(true),
         )
         .arg(
             Arg::new("keystore")
@@ -33,29 +33,32 @@ fn main() {
                 .short('k')
                 .takes_value(true)
                 .value_name("PATH or URL")
-                .help("Location of a keystore. This enables signature verification of the DGCs.")
+                .help("Location of a keystore. This enables signature verification of the DGCs."),
         )
         .get_matches();
 
-    let keystore = args.value_of("keystore").map(|text| {
-        if let Ok(url) = Url::from_str(text) {
-            libdgc::keystore::load_from_url(url)
-        }
-        else {
-            libdgc::keystore::load_from_file(text)
-        }
+    let keystore = args
+        .value_of("keystore")
+        .map(|text| {
+            if let Ok(url) = Url::from_str(text) {
+                libdgc::keystore::load_from_url(url)
+            } else {
+                libdgc::keystore::load_from_file(text)
+            }
+        })
+        .transpose()
+        .map_err(|e| {
+            use KeystoreError::{DownloadError, FileError, ParsingError};
+            match e {
+                FileError(inner) => format!("Unable to load keystore from path: {}", inner),
+                DownloadError(inner) => format!("Unable to download keystore: {}", inner),
+                ParsingError(inner) => format!("Unable to parse provided keystore: {}", inner),
 
-    }).transpose().map_err(|e| {
-        use KeystoreError::{ FileError, DownloadError, ParsingError };
-        match e {
-            FileError(inner) => format!("Unable to load keystore from path: {}", inner),
-            DownloadError(inner) => format!("Unable to download keystore: {}", inner),
-            ParsingError(inner) => format!("Unable to parse provided keystore: {}", inner),
+                e => panic!("Unreachable : {:?}", e),
+            }
+        })
+        .unwrap();
 
-            e => panic!("Unreachable : {:?}", e)
-        }
-    }).unwrap();
-    
     if let Some(images) = args.values_of("images") {
         for image in images {
             scan_image(image, &keystore);
@@ -64,33 +67,29 @@ fn main() {
 }
 
 fn scan_image(image: &str, keystore: &Option<KeyStore>) {
-
     println!("Image '{}': ", image);
     match libdgc::decode_image(image) {
+        Ok(scanned) => {
+            for raw_cert in scanned {
+                println!("Raw lenght is: {} bytes", raw_cert.buf_len());
 
-        Ok(scanned) => for raw_cert in scanned {
-
-            println!("Raw lenght is: {} bytes", raw_cert.buf_len());
-
-            match (raw_cert.decode(), keystore) {
-                (Ok(decoded), Some(keystore)) => match decoded.verify_signature(keystore) {
-
-                    Ok(verified) => {
-                        println!("Signature is valid.\n{}", verified)
+                match (raw_cert.decode(), keystore) {
+                    (Ok(decoded), Some(keystore)) => match decoded.verify_signature(keystore) {
+                        Ok(verified) => {
+                            println!("Signature is valid.\n{}", verified)
+                        }
+                        Err(e) => println!("Bad signature !"),
                     },
-                    Err(e) => println!("Bad signature !"),
-                },
 
-                (_, None) => {
-                    println!("Could not load a keystore, no signature verification.");
-
-                },
-                (Err(e), _) => {
-                    println!("Failed to decode QR code: {:?}", e);
-                },
+                    (_, None) => {
+                        println!("Could not load a keystore, no signature verification.");
+                    }
+                    (Err(e), _) => {
+                        println!("Failed to decode QR code: {:?}", e);
+                    }
+                }
             }
-
-        },
+        }
 
         Err(_) => {
             println!("Failed to use image.");
@@ -103,7 +102,7 @@ atch result {
                 for (_, cert) in qrcodes.decoded {
 
                     println!("{}", cert);
-                    
+
                     if let Some(keystore) = keystore {
 
                         println!("Signature is {}.", match cert.verify_signature(keystore) {
