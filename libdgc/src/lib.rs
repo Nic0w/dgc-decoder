@@ -1,4 +1,4 @@
-use std::iter::Iterator;
+use std::{iter::Iterator, str::FromStr};
 use std::path::Path;
 
 use image::ImageError;
@@ -10,31 +10,25 @@ pub mod dgc;
 pub mod display;
 pub mod hcert;
 
-use crate::cose::COSE_Sign1;
+use crate::{cose::COSE_Sign1, dgc::Raw};
 use crate::cose::Generic_Headers;
 use crate::dgc::DigitalGreenCertificate;
-use crate::dgc::{DecodeError, Decoded };
 
 use zbars::prelude::*;
 use zbars::ZBarErrorType;
 
-pub struct SomeDecoded<'d> {
-    pub decoded: Vec<(usize, DigitalGreenCertificate<'d, Decoded>)>,
-    pub failed: Vec<(usize, DecodeError)>,
-}
-
 pub enum ImageDecodingFailure {
     BadImage(ImageError),
     ScannerFailure(ZBarErrorType),
+    InvalidQRCode,
     Blah,
 }
 
-type ImageDecodingResult<'i> = Result<Option<SomeDecoded<'i>>, ImageDecodingFailure>;
+type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure>;
 
-pub fn decode_image<P>(image_path: P, buffers: &mut Vec<Vec<u8>>) -> ImageDecodingResult<'_>
-where
-    P: AsRef<Path>,
-{
+
+pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i> {
+
     use ImageDecodingFailure::*;
 
     let image = ZBarImage::from_path(image_path).map_err(|e| Blah)?;
@@ -46,28 +40,9 @@ where
 
     let symbol_set = scanner.scan_image(&image).map_err(ScannerFailure)?;
 
-    let mut result = SomeDecoded {
-        decoded: vec![],
-        failed: vec![],
-    };
+    let raw_certs: Result<Vec<_>, _> = symbol_set.iter()
+        .map(|qrcode| DigitalGreenCertificate::<Raw>::from_str(qrcode.data()))
+        .collect();
 
-    buffers.resize_with(symbol_set.size() as usize , Vec::new);
-
-    let symbols = buffers.iter_mut().zip(symbol_set.iter());
-
-    for (id, (buffer, qrcode)) in symbols.enumerate() {
-
-        match dgc::from_str(qrcode.data(), buffer) {
-
-            Ok(decoded) => result.decoded.push((id, decoded)),
-
-            Err(failure) => result.failed.push((id, failure)),
-        }
-    }
-
-    if result.decoded.is_empty() && result.failed.is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some(result))
-    }
+    raw_certs.map_err(|_| InvalidQRCode)
 }

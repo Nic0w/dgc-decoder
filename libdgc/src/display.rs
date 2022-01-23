@@ -1,10 +1,10 @@
 use std::fmt::{self, Display};
 
-use crate::dgc::{DigitalGreenCertificate, State};
+use crate::dgc::{DigitalGreenCertificate, State, Verified};
 
-impl<T: State> Display for DigitalGreenCertificate<'_, T> {
+impl Display for DigitalGreenCertificate<Verified<'_>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let cert = &self.payload.hcert[&1];
+        let cert = &self.hcert_payload().hcert[&1];
         let person = &cert.nam;
         let dob = &cert.dob;
 

@@ -1,3 +1,5 @@
+use std::{str::FromStr, marker::PhantomData};
+
 use flate2::read::ZlibDecoder;
 
 use chrono::{DateTime, TimeZone, Utc};
@@ -5,74 +7,128 @@ use chrono::{DateTime, TimeZone, Utc};
 use serde_cbor::{self, error::Error as CBORError };
 
 use crate::{
-    cose::COSE_Sign1,
+    cose::{COSE_Sign1, self},
     keystore::KeyStore,
     cwt,
     hcert::{CertificateData, HCertPayload, Person, Recovery, Test, Vaccine},
 };
 
-pub struct Decoded;
-pub struct Verified;
+pub struct Raw<'r> {
+    buffer: Vec<u8>,
+    __ : PhantomData<&'r ()>
+}
+
+pub struct Decoded<'buf> {
+    cose_msg: COSE_Sign1<'buf>,
+}
+pub struct Verified<'sign1> {
+    pub hcert_payload: HCertPayload<'sign1>,
+}
 pub struct Invalid;
 
 pub trait State {}
-impl State for Decoded {}
-impl State for Verified {}
+impl<'r> State for Raw<'r> {}
+impl<'b> State for Decoded<'b> {}
+impl<'s> State for Verified<'s> {}
 
-#[derive(Debug)]
-pub struct SignatureError<'cose>(pub cwt::VerificationError, pub HCertPayload<'cose>);
-
-pub struct DigitalGreenCertificate<'buf, T: State> {
-    _state: T,
-
-    cose_msg: COSE_Sign1<'buf>,
-
-    pub(crate) payload: HCertPayload<'buf>,
+pub struct DigitalGreenCertificate<T: State> {
+    state: T,
 }
 
-impl<'cose, T: State> DigitalGreenCertificate<'cose, T> {
-    fn transition<To: State>(self, state: To) -> DigitalGreenCertificate<'cose, To> {
-        DigitalGreenCertificate {
-            _state: state,
-            cose_msg: self.cose_msg,
-            payload: self.payload,
+impl<'r> FromStr for DigitalGreenCertificate<Raw<'r>> {
+
+    type Err = DecodeError<'r>;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+
+        use DecodeError::*;
+
+        //Invalid text: couldn't separate version from data.
+        let (version, data) = s.split_once(':').ok_or(InvalidText)?;
+    
+        match version {
+            "HC1" => {
+                let base45_decoded = base45::decode(data)?;
+    
+                let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
+    
+                use std::io::Read;
+
+                let mut buffer:Vec<u8> = Vec::new();
+    
+                zlib_decoder.read_to_end(&mut buffer)?;
+    
+                Ok(DigitalGreenCertificate {
+                    state: Raw { buffer, __: PhantomData },
+                })
+            }
+    
+            _ => Err(Unknown2DCodeVersion),
         }
     }
+}
+
+impl DigitalGreenCertificate<Raw<'_>> {
+
+    pub fn decode<'buf>(&'buf self) -> Result<DigitalGreenCertificate<Decoded<'buf>>, DecodeError> {
+
+        let cose_msg: COSE_Sign1 = 
+            serde_cbor::from_slice(self.state.buffer.as_slice())?; //Failed to decode signed CWT.
+
+        let result = DigitalGreenCertificate {
+            state: Decoded {
+                cose_msg
+            }
+        };
+
+        Ok(result)
+    }
+}
+
+impl<'buf> DigitalGreenCertificate<Decoded<'buf>> {
+
+    pub fn verify_signature<'a>(&'buf self, keystore: &'a KeyStore) -> Result<DigitalGreenCertificate<Verified<'buf>>, DecodeError<'buf>> {
+
+        if let Err(e) = cwt::verify_signature(&self.state.cose_msg, keystore) {
+            return Err(DecodeError::InvalidSignature(e, &self.state.cose_msg));
+        }
+
+        let hcert_payload = serde_cbor::from_slice(self.state.cose_msg.payload)?; //Failed to decode CWT payload.
+
+        let result = DigitalGreenCertificate {
+            state: Verified { hcert_payload }
+        };
+
+        Ok(result)
+    }
+}
+
+impl<'sign1> DigitalGreenCertificate<Verified<'sign1>> {
 
     pub fn hcert_payload(&self) -> &HCertPayload {
-        &self.payload
+        &self.state.hcert_payload
     }
 
     pub fn issued_at(&self) -> DateTime<Utc> {
-        Utc.timestamp(self.payload.iat as i64, 0)
+        Utc.timestamp(self.hcert_payload().iat as i64, 0)
     }
 
     pub fn expiring_at(&self) -> DateTime<Utc> {
-        Utc.timestamp(self.payload.exp as i64, 0)
+        Utc.timestamp(self.hcert_payload().exp as i64, 0)
     }
 
     pub fn signature_issuer(&self) -> &str {
-        self.payload.iss
+        self.hcert_payload().iss
     }
 }
 
-impl<'cose> DigitalGreenCertificate<'cose, Decoded> {
-    pub fn verify_signature<'a>(self, keystore: &'a KeyStore) -> Result<DigitalGreenCertificate<'cose, Verified>, SignatureError<'cose>> {
-        if let Err(e) = cwt::verify_signature(&self.cose_msg, keystore) {
-            return Err(SignatureError(e, self.payload));
-        }
-
-        Ok(self.transition(Verified))
-    }
-}
-
-impl<'cose> DigitalGreenCertificate<'cose, Verified> {
+impl<'s> DigitalGreenCertificate<Verified<'s>> {
     pub(crate) fn inner(&self) -> &CertificateData {
-        &self.payload.hcert[&1]
+        &self.hcert_payload().hcert[&1]
     }
 
     pub fn person(&self) -> &Person {
-        &self.inner().nam
+       &self.inner().nam
     }
 
     pub fn vaccine_data(&self) -> &Option<[Vaccine; 1]> {
@@ -89,61 +145,28 @@ impl<'cose> DigitalGreenCertificate<'cose, Verified> {
 }
 
 #[derive(Debug)]
-pub enum DecodeError {
+pub enum DecodeError<'c> {
     Base45DecodingFailed(base45::DecodeError),
     CBORParsingFailed(CBORError),
     DecompressionFailed(std::io::Error),
+    InvalidSignature(cwt::VerificationError, &'c cose::COSE_Sign1<'c>),
     InvalidText,
     Unknown2DCodeVersion,
 }
 
-impl From<base45::DecodeError> for DecodeError {
+impl From<base45::DecodeError> for DecodeError<'_> {
     fn from(e: base45::DecodeError) -> Self {
         DecodeError::Base45DecodingFailed(e)
     }
 }
-impl From<CBORError> for DecodeError {
+impl From<CBORError> for DecodeError<'_> {
     fn from(e: CBORError) -> Self {
         DecodeError::CBORParsingFailed(e)
     }
 }
-impl From<std::io::Error> for DecodeError {
+impl From<std::io::Error> for DecodeError<'_> {
     fn from(e: std::io::Error) -> Self {
         DecodeError::DecompressionFailed(e)
     }
 }
 
-
-pub fn from_str<'buf>(s: &str, buffer: &'buf mut Vec<u8>) -> Result<DigitalGreenCertificate<'buf, Decoded>, DecodeError> {
-    use DecodeError::*;
-
-    //Invalid text: couldn't separate version from data.
-    let (version, data) = s.split_once(':').ok_or(InvalidText)?;
-
-    match version {
-        "HC1" => {
-            let base45_decoded = base45::decode(data)?;
-
-            let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
-
-            use std::io::Read;
-
-            zlib_decoder.read_to_end(buffer)?;
-
-
-            let cose_msg: COSE_Sign1 =
-                serde_cbor::from_slice(buffer)?; //Failed to decode signed CWT.
-
-            let payload: HCertPayload =
-                serde_cbor::from_slice(cose_msg.payload)?; //Failed to decode CWT payload.
-
-            Ok(DigitalGreenCertificate {
-                _state: Decoded,
-                cose_msg,
-                payload,
-            })
-        }
-
-        _ => Err(Unknown2DCodeVersion),
-    }
-}

@@ -65,11 +65,36 @@ fn main() {
 
 fn scan_image(image: &str, keystore: &Option<KeyStore>) {
 
-    let mut buffers: Vec<_> = vec![];
-
     println!("Image '{}': ", image);
-    match libdgc::decode_image(image, &mut buffers) {
-        Ok(result) => match result {
+    match libdgc::decode_image(image) {
+
+        Ok(scanned) => for cert in scanned {
+
+            match cert.decode() {
+                Ok(decoded) => {
+
+                    if let Some(keystore) = keystore {
+                        let truc = decoded.verify_signature(keystore);
+
+                        println!("{}", truc.unwrap());
+                    }
+
+
+                },
+                Err(e) => {
+                    println!("Failed to decode QR code: {:?}", e);
+                },
+            }
+
+        },
+
+        Err(_) => {
+            println!("Failed to use image.");
+        }
+    }
+}
+/*
+atch result {
             Some(qrcodes) => {
                 for (_, cert) in qrcodes.decoded {
 
@@ -96,10 +121,5 @@ fn scan_image(image: &str, keystore: &Option<KeyStore>) {
             None => {
                 println!("No QR code found in picture !");
             }
-        },
 
-        Err(_) => {
-            println!("Failed to use image.");
-        }
-    }
-}
+*/
