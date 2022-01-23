@@ -49,4 +49,14 @@ impl KeyStore {
             .map_err(|e|  X509ParsingError::X509Parser(e.to_string()))
             .map_err(X509ParsingFailed)   
     }
+
+    pub fn pubkeys(&self) -> impl Iterator<Item = (&str, X509Certificate)> {
+        
+        self.inner.iter().filter_map(|(k,v)| {
+            X509Certificate::from_der(v)
+                .map(|(_, cert)| cert )
+                .ok()
+                .map(|c| (k.as_str(), c) )
+        })
+    }
 }
