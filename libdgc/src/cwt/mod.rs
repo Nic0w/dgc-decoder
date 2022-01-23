@@ -35,12 +35,6 @@ pub fn verify_signature(cose_obj: &COSE_Sign1, keystore: &KeyStore) -> Result<()
     let protected_hdr: Generic_Headers =
         serde_cbor::from_slice(cose_obj.protected).map_err(DecodingFailed)?;
 
-    println!("alg: {:?}", protected_hdr.alg);
-
-    println!("content_type: {:?}", protected_hdr.content_type);
-    println!("crit: {:?}", protected_hdr.crit);
-
-
     let kid = base64::encode(&protected_hdr.kid.ok_or(KeyIdNotFound)?);
 
     let validation_data = sign::get_validation_data(cose_obj.protected, cose_obj.payload);
