@@ -68,20 +68,24 @@ fn scan_image(image: &str, keystore: &Option<KeyStore>) {
     println!("Image '{}': ", image);
     match libdgc::decode_image(image) {
 
-        Ok(scanned) => for cert in scanned {
+        Ok(scanned) => for raw_cert in scanned {
 
-            match cert.decode() {
-                Ok(decoded) => {
+            println!("Raw lenght is: {} bytes", raw_cert.buf_len());
 
-                    if let Some(keystore) = keystore {
-                        let truc = decoded.verify_signature(keystore);
+            match (raw_cert.decode(), keystore) {
+                (Ok(decoded), Some(keystore)) => match decoded.verify_signature(keystore) {
 
-                        println!("{}", truc.unwrap());
-                    }
+                    Ok(verified) => {
+                        println!("Signature is valid.\n{}", verified)
+                    },
+                    Err(e) => println!("Bad signature !"),
+                },
 
+                (_, None) => {
+                    println!("Could not load a keystore, no signature verification.");
 
                 },
-                Err(e) => {
+                (Err(e), _) => {
                     println!("Failed to decode QR code: {:?}", e);
                 },
             }
