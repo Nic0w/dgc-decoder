@@ -1,3 +1,5 @@
+use std::os::raw;
+
 use libkeystore::{KeystoreError, KeyStore};
 use serde_cbor::{self, error::Error as CBORError};
 
@@ -10,7 +12,7 @@ use crate::Generic_Headers;
 
 use asn1_der::{
     typed::{DerEncodable, SequenceVec},
-    VecBacking,
+    VecBacking, DerObject,
 };
 
 #[derive(Debug)]
@@ -36,13 +38,15 @@ pub fn verify_signature(
 
     let kid = base64::encode(&protected_hdr.kid.ok_or(KeyIdNotFound)?);
 
+    log::debug!(target:"dgc", "Using key: {}", kid);
+    log::debug!(target:"dgc", "With algoritm: {:?}", protected_hdr.alg);
+
     let validation_data = sign::get_validation_data(cose_obj.protected, cose_obj.payload);
 
     let cert = keystore
         .pubkey_for_signature(&kid)
         .map_err(PubKeyNotFoundOrInvalid)?;
 
-    println!("Fetched key '{}' .", kid);
 
     let mut signature_der = vec![];
 
@@ -50,26 +54,38 @@ pub fn verify_signature(
         .ok()
         .ok_or(BadSignature)?;
 
+    println!("{}", base64::encode(&signature_der));
+
     cert.verify_signature(&ECDSA_P256_SHA256, &validation_data, &signature_der)
         .map_err(InvalidSignature)
 }
 
 fn signature_to_der(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'static str> {
+
     let len = raw_signature.len() / 2;
 
-    let mut vec_r = vec![];
-    let mut vec_s = vec![];
+    let mut r_bufs = (vec![], raw_signature[..len].to_vec());
+    let mut s_bufs = (vec![], raw_signature[len..].to_vec());
 
-    let r_der = VecBacking(&mut vec_r);
-    let s_der = VecBacking(&mut vec_s);
+    fn to_der_integer<'buf>(buffer: &'buf mut Vec<u8>, bytes: &mut Vec<u8>) -> Result<DerObject<'buf>, asn1_der::Asn1DerError> {
 
-    let r = asn1_der::DerObject::new(0x02, &raw_signature[..len], r_der)
-        .ok()
-        .ok_or("Failed to encode `r` to DER.")?;
+        let backing_vec = VecBacking(buffer);
 
-    let s = asn1_der::DerObject::new(0x02, &raw_signature[len..], s_der)
-        .ok()
-        .ok_or("Failed to encode `s` to DER.")?;
+        if bytes[0] & 0x80 > 0 {
+            let prefix = [0, bytes[0]];
+            bytes.splice(..1, prefix);
+        }
+
+        asn1_der::DerObject::new(0x02, bytes, backing_vec)
+    }
+
+    let r = to_der_integer(&mut r_bufs.0, &mut r_bufs.1)
+                        .ok()
+                        .ok_or("Failed to encode `r` to DER.")?;
+
+    let s = to_der_integer(&mut s_bufs.0, &mut s_bufs.1)
+                        .ok()
+                        .ok_or("Failed to encode `s` to DER.")?;
 
     let sequence = SequenceVec(vec![r, s]);
 

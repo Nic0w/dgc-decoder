@@ -7,6 +7,8 @@ mod error;
 mod raw;
 mod verified;
 
+pub use error::DecodeError;
+
 pub struct Raw<'r> {
     buffer: Vec<u8>,
     __: PhantomData<&'r ()>,

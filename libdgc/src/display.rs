@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use crate::dgc::{DigitalGreenCertificate, State, Verified};
+use crate::dgc::{DigitalGreenCertificate, Verified};
 
 impl Display for DigitalGreenCertificate<Verified<'_>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

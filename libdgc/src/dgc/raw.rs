@@ -17,7 +17,13 @@ impl<'r> FromStr for DigitalGreenCertificate<Raw<'r>> {
 
         match version {
             "HC1" => {
+
+                log::debug!(target:"dgc", "Certificate version: HC1");
+                log::trace!(target: "dgc", "Before bas45 decoding: {} bytes", data.len());
+
                 let base45_decoded = base45::decode(data)?;
+
+                log::trace!(target: "dgc", "Before decompression: {} bytes", base45_decoded.len());
 
                 let mut zlib_decoder = ZlibDecoder::new(base45_decoded.as_slice());
 
