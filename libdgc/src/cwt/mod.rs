@@ -1,5 +1,3 @@
-use std::os::raw;
-
 use libkeystore::{KeystoreError, KeyStore};
 use serde_cbor::{self, error::Error as CBORError};
 
@@ -53,8 +51,6 @@ pub fn verify_signature(
     signature_to_der(signature, &mut signature_der)
         .ok()
         .ok_or(BadSignature)?;
-
-    println!("{}", base64::encode(&signature_der));
 
     cert.verify_signature(&ECDSA_P256_SHA256, &validation_data, &signature_der)
         .map_err(InvalidSignature)
