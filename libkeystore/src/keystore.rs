@@ -20,10 +20,15 @@ impl KeyStore {
         for (id, pubkey) in raw_inner {
             if let Some(content) = pubkey.get(0) {
                 if let Ok(decoded) = base64::decode(content) {
+
+                    log::trace!(target: "keystore", "Added public key with id: {}", id);
+
                     inner.insert(id, decoded);
                 }
             }
         }
+
+        log::debug!(target: "keystore", "Added {} keys to keystore.", inner.len());
 
         Self { inner }
     }

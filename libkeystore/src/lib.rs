@@ -16,6 +16,8 @@ pub use keystore::KeyStore;
 pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<KeyStore, KeystoreError> {
     use KeystoreError::FileError;
 
+    log::debug!(target:"keystore", "Loading keystore from file: {}", path.as_ref().display());
+
     let file = File::open(path).map_err(FileError)?;
     let reader = BufReader::new(file);
 
@@ -24,6 +26,8 @@ pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<KeyStore, KeystoreError
 
 pub fn load_from_url<U: IntoUrl>(url: U) -> Result<KeyStore, KeystoreError> {
     use KeystoreError::DownloadError;
+
+    log::debug!(target:"keystore", "Loading keystore from URL: {}", url.as_str());
 
     let response = reqwest::blocking::get(url).map_err(DownloadError)?;
 
