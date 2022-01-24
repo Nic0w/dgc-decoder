@@ -1,7 +1,6 @@
 use std::{
-    collections::HashMap,
     fs::File,
-    io::{self, BufReader, Read},
+    io::{BufReader, Read},
     path::Path,
 };
 

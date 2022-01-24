@@ -109,7 +109,7 @@ fn setup_logger() -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .level(Debug)
         //.level_for("libkeystore", Trace)
-        .level_for("dgc", Trace)
+        //.level_for("dgc", Trace)
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{}][{}] {}",
