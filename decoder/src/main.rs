@@ -9,7 +9,8 @@ const FR_DSC_URL: &'static str =
     "https://app.tousanticovid.gouv.fr/json/version-33/Certs/dcc-certs.json";
 
 fn main() {
-    println!("Hello, world!\n");
+
+    let _ = setup_logger();
 
     let args = App::new("Digital Green Certificate decoder")
         .version("1.0")
@@ -46,7 +47,7 @@ fn main() {
         .map_err(|e| {
 
             use libkeystore::KeystoreError::{DownloadError, FileError, ParsingError};
-            
+
             match e {
                 FileError(inner) => format!("Unable to load keystore from path: {}", inner),
                 DownloadError(inner) => format!("Unable to download keystore: {}", inner),
@@ -59,24 +60,30 @@ fn main() {
 
     if let Some(images) = args.values_of("images") {
         for image in images {
-            scan_image(image, &keystore);
+            scan_image(image, keystore.as_ref());
         }
     }
 }
 
-fn scan_image(image: &str, keystore: &Option<KeyStore>) {
-    println!("Image '{}': ", image);
+fn scan_image(image: &str, keystore: Option<&KeyStore>) {
+
+    log::info!("Searching certificates in image: {}", image);
+
     match libdgc::decode_image(image) {
         Ok(scanned) => {
+
+            log::info!(target:"decoder", "Found {} valid QR codes.", scanned.len());
+
             for raw_cert in scanned {
-                println!("Raw lenght is: {} bytes", raw_cert.buf_len());
 
                 match (raw_cert.decode(), keystore) {
                     (Ok(decoded), Some(keystore)) => match decoded.verify_signature(keystore) {
                         Ok(verified) => {
-                            println!("Signature is valid.\n{}", verified)
+                            log::info!("Signature is valid.\n{}", verified)
                         }
-                        Err(e) => println!("Bad signature !"),
+                        Err(_e) => {
+                            log::error!("Bad signature !")
+                        },
                     },
 
                     (_, None) => {
@@ -89,38 +96,29 @@ fn scan_image(image: &str, keystore: &Option<KeyStore>) {
             }
         }
 
-        Err(_) => {
-            println!("Failed to use image.");
+        Err(e) => {
+            log::error!("Failed to use image");
         }
     }
 }
-/*
-atch result {
-            Some(qrcodes) => {
-                for (_, cert) in qrcodes.decoded {
 
-                    println!("{}", cert);
+fn setup_logger() -> Result<(), fern::InitError> {
 
-                    if let Some(keystore) = keystore {
+    use log::LevelFilter::*;
 
-                        println!("Signature is {}.", match cert.verify_signature(keystore) {
-
-                            Ok(_) => "valid".to_owned(),
-                            Err(e) => format!("invalid: {:?}", e.0)
-
-                        });
-                    }
-                }
-
-                println!("Failed to decode {} certs: ", qrcodes.failed.len());
-
-                for (_, failure) in qrcodes.failed {
-                    println!("{:?}", failure);
-                }
-            }
-
-            None => {
-                println!("No QR code found in picture !");
-            }
-
-*/
+    fern::Dispatch::new()
+        .level(Debug)
+        //.level_for("libkeystore", Trace)
+        .level_for("dgc", Trace)
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{}][{}] {}",
+                record.target(),
+                record.level(),
+                message
+            ))
+        })
+        .chain(std::io::stdout())
+        .apply()?;
+    Ok(())
+}
