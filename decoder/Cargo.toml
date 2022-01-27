@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
 libdgc = { path = "../libdgc" }
 clap = { version = "3.0.11", features = ["derive"] }
 reqwest = "0.11.9"

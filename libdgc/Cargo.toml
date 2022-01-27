@@ -10,7 +10,7 @@ flate2 = "1.0.22"
 serde_cbor = "0.11.2"
 serde = { version = "1.0.133", features = [ "derive" ] }
 serde_bytes = "0.11.5"
-zbars = { git = "https://github.com/Nic0w/zbars.git", branch = "fix-version" }
+zbars = { git = "https://github.com/Nic0w/zbars.git" }
 webpki = "0.22.0"
 asn1_der = "0.7.5"
 image = "0.23.14"
