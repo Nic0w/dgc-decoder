@@ -22,7 +22,6 @@ pub enum ImageDecodingFailure {
     BadImage(ImageError),
     ScannerFailure(ZBarErrorType),
     InvalidQRCode,
-    Blah,
 }
 
 type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure>;
@@ -30,7 +29,7 @@ type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, Ima
 pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i> {
     use ImageDecodingFailure::*;
 
-    let image = ZBarImage::from_path(image_path).map_err(|e| Blah)?;
+    let image = ZBarImage::from_path(image_path).map_err(BadImage)?;
 
     let scanner = ZBarImageScanner::builder()
         .with_config(ZBarSymbolType::ZBAR_QRCODE, ZBarConfig::ZBAR_CFG_ENABLE, 1)

@@ -92,6 +92,7 @@ pub struct Recovery {}
 
 const FIELDS: &[&str] = &["iss", "iat", "exp", "hcert"];
 
+#[allow(clippy::upper_case_acronyms)]
 enum Field {
     ISS,
     IAT,

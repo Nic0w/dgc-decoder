@@ -1,13 +1,10 @@
-use std::{str::FromStr, path::{Path, PathBuf}, fmt::Display};
+use std::{str::FromStr, path::{Path, PathBuf}};
 
 use libkeystore::KeyStore;
 use log::LevelFilter;
 use reqwest::Url;
 
-use clap::{App, Arg, Parser};
-
-const FR_DSC_URL: &'static str =
-    "https://app.tousanticovid.gouv.fr/json/version-33/Certs/dcc-certs.json";
+use clap::Parser;
 
 /// Digital Green Certificate decoder
 #[derive(Parser, Debug)]

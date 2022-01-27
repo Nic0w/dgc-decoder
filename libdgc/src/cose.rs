@@ -7,6 +7,7 @@ use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
 
 use serde_bytes::Bytes;
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]
 pub struct COSE_Sign1<'buf> {
     pub protected: &'buf Bytes,
@@ -15,6 +16,7 @@ pub struct COSE_Sign1<'buf> {
     pub signature: &'buf Bytes,
 }
 
+#[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]
 pub struct Generic_Headers<'cose> {
     pub alg: Option<i64>,
@@ -29,6 +31,8 @@ pub struct Generic_Headers<'cose> {
 const COSE_SIGN1_FIELDS: &[&str] = &["protected", "unprotected", "payload", "signature"];
 const GENERIC_HDR_FIELDS: &[&str] = &["alg", "crit", "content_type", "kid", "iv", "partial_iv"];
 
+#[allow(clippy::upper_case_acronyms)]
+#[allow(non_camel_case_types)]
 enum GenericHeaderField {
     ALG,
     CRIT,
@@ -73,6 +77,7 @@ impl<'de> Visitor<'de> for GenericHeaderFieldVisitor {
     }
 }
 
+#[allow(non_camel_case_types)]
 struct Generic_HeadersVisitor<'c> {
     _lt: PhantomData<&'c ()>,
 }
@@ -165,6 +170,7 @@ impl<'c, 'de: 'c> Deserialize<'de> for Generic_Headers<'c> {
     }
 }
 
+#[allow(non_camel_case_types)]
 struct COSE_Sign1Visitor<'v> {
     _lt: PhantomData<&'v ()>,
 }
