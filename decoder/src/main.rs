@@ -111,7 +111,7 @@ fn scan_image<P: AsRef<Path>>(image: P, keystore: Option<&KeyStore>) {
         }
 
         Err(e) => {
-            log::error!("Failed to use image");
+            log::error!("Failed to use image: {}", e);
         }
     }
 }

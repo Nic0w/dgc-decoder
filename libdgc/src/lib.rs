@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, fmt::{Display, Pointer}};
 use std::{iter::Iterator, str::FromStr};
 
 use image::ImageError;
@@ -18,13 +18,13 @@ use crate::{cose::COSE_Sign1, dgc::Raw};
 
 pub use dgc::DecodeError;
 
-pub enum ImageDecodingFailure {
+pub enum ImageDecodingFailure<'i> {
     BadImage(ImageError),
     ScannerFailure(ZBarErrorType),
-    InvalidQRCode,
+    InvalidQRCode(DecodeError<'i>),
 }
 
-type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure>;
+type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure<'i>>;
 
 pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i> {
     use ImageDecodingFailure::*;
@@ -59,5 +59,21 @@ pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i
 
     log::debug!(target:"dgc", "Scanned {} QR codes in image.", count);
 
-    raw_certs.map_err(|_| InvalidQRCode)
+    raw_certs.map_err(InvalidQRCode)
+}
+
+impl Display for ImageDecodingFailure<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        
+        use ImageDecodingFailure::*;
+
+        match self {
+            BadImage(img_error) => img_error.fmt(f),
+            ScannerFailure(scanner_error) => match scanner_error {
+                ZBarErrorType::Simple(code) => write!(f, "ZBar failed to scan image; error code: {}", code),
+                ZBarErrorType::Complex(e) => e.fmt(f),
+            },
+            InvalidQRCode(decoding_error) => write!(f, "{:?}", decoding_error),
+        }
+    }
 }
