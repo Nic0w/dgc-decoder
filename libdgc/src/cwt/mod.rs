@@ -26,7 +26,7 @@ pub enum VerificationError {
 pub fn verify_signature(
     cose_obj: &COSE_Sign1,
     keystore: &KeyStore,
-) -> Result<(), VerificationError> {
+) -> Result<String, VerificationError> {
     use VerificationError::*;
 
     let signature = &cose_obj.signature;
@@ -53,7 +53,9 @@ pub fn verify_signature(
         .ok_or(BadSignature)?;
 
     cert.verify_signature(&ECDSA_P256_SHA256, &validation_data, &signature_der)
-        .map_err(InvalidSignature)
+        .map_err(InvalidSignature)?;
+
+    Ok(kid)
 }
 
 fn signature_to_der(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'static str> {

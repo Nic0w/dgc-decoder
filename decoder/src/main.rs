@@ -1,4 +1,4 @@
-use std::{str::FromStr, path::{Path, PathBuf}};
+use std::{str::FromStr, path::{Path, PathBuf}, fmt::Display};
 
 use libkeystore::KeyStore;
 use log::LevelFilter;
@@ -75,14 +75,28 @@ fn scan_image<P: AsRef<Path>>(image: P, keystore: Option<&KeyStore>) {
 
             log::info!(target:"decoder", "Found {} valid QR codes.", scanned.len());
 
-            for raw_cert in scanned {
+            for (i, raw_cert) in scanned.into_iter().enumerate() {
+
+                println!("Certificate {}:", i);
 
                 match (raw_cert.decode(), keystore) {
                     (Ok(decoded), Some(keystore)) => match decoded.verify_signature(keystore) {
-                        Ok(verified) => {
-                            log::info!("Signature is valid.");
+                        Ok((kid, verified_dgc)) => {
 
-                            println!("{}", verified);
+                            let pubkey = keystore.pubkey_as_cert(&kid).unwrap();
+
+                            println!("Signature is verified successfully with key id '{}'", kid);
+                            println!("Subject: {}", pubkey.subject());
+                            println!("Issuer: {}", pubkey.issuer());
+
+                            let begin = pubkey.validity().not_before.to_rfc2822();
+                            let end = pubkey.validity().not_after.to_rfc2822();
+
+                            println!("Valid from {} to {}.", begin, end);
+                            println!();
+
+                            println!("{}", verified_dgc);
+
                         }
                         Err(_e) => {
                             log::error!("Bad signature !")

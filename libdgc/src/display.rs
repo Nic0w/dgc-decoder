@@ -17,25 +17,16 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
 
         let days = self.expiring_at() - self.issued_at();
 
-        writeln!(
-            f,
-            "\tIssued at: {}; expiring at: {} ({} days)",
-            self.issued_at(),
-            self.expiring_at(),
-            days.num_days()
-        )
-        .ok();
-
         if let Some([vaccine_data]) = &cert.v {
+            writeln!(f, "Vaccine data:").ok();
+
             writeln!(
                 f,
-                "Targeted disease: {}",
+                "\tTargeted disease: {}",
                 translate_disease(vaccine_data.tg)
             )
             .ok();
-            writeln!(f).ok();
 
-            writeln!(f, "Vaccine data:").ok();
             writeln!(
                 f,
                 "\tName: {}",
@@ -50,21 +41,29 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
             )
             .ok();
 
-            writeln!(f).ok();
             writeln!(
                 f,
-                "Shot {}/{} done {}.",
+                "\tShot {}/{} done {}.",
                 &vaccine_data.dn, &vaccine_data.sd, &vaccine_data.dt
             )
             .ok();
 
             writeln!(
                 f,
-                "Certificate issued by {} ({})",
+                "Certificate issued by {} ({}):",
                 &vaccine_data.is, &vaccine_data.co
             )
             .ok();
         }
+
+        writeln!(
+            f,
+            "\tIssued at: {};\n\tExpiring at: {};\n\tDuration: {} days",
+            self.issued_at(),
+            self.expiring_at(),
+            days.num_days()
+        )
+        .ok();
 
         writeln!(f)
     }
