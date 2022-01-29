@@ -1,10 +1,10 @@
 use std::{str::FromStr, path::{Path, PathBuf}};
 
-use libkeystore::KeyStore;
+use libkeystore::{KeyStore, KeystoreError};
 use log::LevelFilter;
 use reqwest::Url;
 
-use clap::Parser;
+use clap::{Parser, Subcommand};
 
 /// Digital Green Certificate decoder
 #[derive(Parser, Debug)]
@@ -13,11 +13,36 @@ struct CommandLineInterface {
 
     #[clap(short, long, parse(from_occurrences))]
     verbose: usize,
-    
-    #[clap(short, long)]
-    keystore: Option<String>,
 
-    image: Option<PathBuf>,
+    #[clap(subcommand)]
+    commands: Commands
+}
+
+#[derive(Subcommand, Debug)]
+enum Commands {
+
+    /// Verifies a DGC cryptographic signature then decodes the payload
+    Verify {
+
+        #[clap(short, long)]
+        /// URL or path to a JSON file storing public keys.
+        keystore: String,
+    
+        /// Path to the image to scan for QR codes.
+        image: PathBuf,
+    },
+
+    /// Decode provided DGC but without signature verification
+    Decode {
+        /// Path to the image to scan for QR codes.
+        image: PathBuf,
+    },
+
+    /// Parse and list public keys in the provided keystore.
+    ListKeystore {
+        /// URL or path to a JSON file storing public keys.
+        keystore: String,
+    }
 }
 
 
@@ -36,30 +61,61 @@ fn main() {
 
     let _ = setup_logger(log_level);
 
-    let keystore = args.keystore
-        .map(|s| {
-            if let Ok(url) = Url::from_str(&s) {
-                libkeystore::load_from_url(url)
-            } else {
-                libkeystore::load_from_file(&s)
-            }
-        })
-        .transpose()
-        .map_err(|e| {
+    match args.commands {
+        Commands::Verify { keystore, image } => {
 
-            use libkeystore::KeystoreError::{DownloadError, FileError, ParsingError};
+            let keystore = get_keystore(&keystore);
 
-            match e {
-                FileError(inner) => format!("Unable to load keystore from path: {}", inner),
-                DownloadError(inner) => format!("Unable to download keystore: {}", inner),
-                ParsingError(inner) => format!("Unable to parse provided keystore: {}", inner),
+            scan_image(image, Some(&keystore));
+        },
+        Commands::Decode { image } => {
+            scan_image(image, None);
+        },
 
-                e => panic!("Unreachable : {:?}", e),
-            }
-        }).unwrap();
+        Commands::ListKeystore { keystore } => {
 
-    if let Some(image) = args.image {
-        scan_image(&image, keystore.as_ref());
+            let keystore = get_keystore(&keystore);
+
+            list_keystore(&keystore);
+        },
+    }
+}
+
+fn get_keystore(txt: &str) -> KeyStore {
+    keystore_from(txt).map_err(|e| {
+        use libkeystore::KeystoreError::{DownloadError, FileError, ParsingError};
+
+        match e {
+            FileError(inner) => format!("Unable to load keystore from path: {}", inner),
+            DownloadError(inner) => format!("Unable to download keystore: {}", inner),
+            ParsingError(inner) => format!("Unable to parse provided keystore: {}", inner),
+
+            e => panic!("Unreachable : {:?}", e),
+        }
+    }).unwrap()
+}
+
+fn keystore_from(txt: &str) -> Result<KeyStore, KeystoreError> {
+    if let Ok(url) = Url::from_str(txt) {
+        libkeystore::load_from_url(url)
+    } else {
+        libkeystore::load_from_file(txt)
+    }
+}
+
+fn list_keystore(keystore: &KeyStore) {
+
+    for (id, key) in keystore.pubkeys() {
+
+        println!("Key id '{}':", id);
+        println!("\tIssuer: {}", key.issuer());
+        println!("\tSubject: {}", key.subject());
+
+        let validity = key.validity();
+
+        println!("\tValidity: from {} to {}", 
+            validity.not_before.to_rfc2822(), 
+            validity.not_after.to_rfc2822());
     }
 }
 
@@ -100,8 +156,12 @@ fn scan_image<P: AsRef<Path>>(image: P, keystore: Option<&KeyStore>) {
                         },
                     },
 
-                    (_, None) => {
-                        println!("Could not load a keystore, no signature verification.");
+                    (Ok(decoded), None) => {
+                        
+                        let hcert = decoded.decode_payload().unwrap();
+
+                        println!("{}", hcert);
+
                     }
                     (Err(e), _) => {
                         println!("Failed to decode QR code: {:?}", e);

@@ -1,4 +1,4 @@
-use chrono::{DateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 
 use crate::hcert::{CertificateData, HCertPayload, Person, Recovery, Test, Vaccine};
 
@@ -10,11 +10,11 @@ impl<'sign1> DigitalGreenCertificate<Verified<'sign1>> {
     }
 
     pub fn issued_at(&self) -> DateTime<Utc> {
-        Utc.timestamp(self.hcert_payload().iat as i64, 0)
+        self.hcert_payload().issued_at()
     }
 
     pub fn expiring_at(&self) -> DateTime<Utc> {
-        Utc.timestamp(self.hcert_payload().exp as i64, 0)
+        self.hcert_payload().expiring_at()
     }
 
     pub fn signature_issuer(&self) -> &str {
