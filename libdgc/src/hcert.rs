@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fmt, marker::PhantomData};
 
+use chrono::{DateTime, Utc, TimeZone};
 use serde::{
     de::{self, Deserializer, MapAccess, Visitor},
     Deserialize,
@@ -18,6 +19,16 @@ pub struct HCertPayload<'cose> {
 
     /// Payload
     pub hcert: HashMap<u8, CertificateData<'cose>>,
+}
+
+impl HCertPayload<'_> {
+    pub fn issued_at(&self) -> DateTime<Utc> {
+        Utc.timestamp(self.iat as i64, 0)
+    }
+
+    pub fn expiring_at(&self) -> DateTime<Utc> {
+        Utc.timestamp(self.exp as i64, 0)
+    }    
 }
 
 #[derive(Debug, PartialEq, Deserialize)]

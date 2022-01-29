@@ -1,10 +1,51 @@
 use std::fmt::{self, Display};
 
-use crate::dgc::{DigitalGreenCertificate, Verified};
+use crate::{dgc::{DigitalGreenCertificate, Verified}, hcert::{HCertPayload, Vaccine}};
 
-impl Display for DigitalGreenCertificate<Verified<'_>> {
+impl Display for Vaccine<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let cert = &self.hcert_payload().hcert[&1];
+        writeln!(f, "Vaccine data:").ok();
+
+        writeln!(
+            f,
+            "\tTargeted disease: {}",
+            translate_disease(self.tg)
+        )
+        .ok();
+
+        writeln!(
+            f,
+            "\tName: {}",
+            translate_medicinal_product(self.mp)
+        )
+        .ok();
+        writeln!(f, "\tType: {}", translate_vaccine_type(self.vp)).ok();
+        writeln!(
+            f,
+            "\tManufacturer : {}",
+            translate_marketing_org(self.ma)
+        )
+        .ok();
+
+        writeln!(
+            f,
+            "\tShot {}/{} done {}.",
+            &self.dn, &self.sd, &self.dt
+        )
+        .ok();
+
+        writeln!(
+            f,
+            "Certificate issued by {} ({}):",
+            &self.is, &self.co
+        )
+    }
+}
+
+impl Display for HCertPayload<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+
+        let cert = &self.hcert[&1];
         let person = &cert.nam;
         let dob = &cert.dob;
 
@@ -18,42 +59,7 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
         let days = self.expiring_at() - self.issued_at();
 
         if let Some([vaccine_data]) = &cert.v {
-            writeln!(f, "Vaccine data:").ok();
-
-            writeln!(
-                f,
-                "\tTargeted disease: {}",
-                translate_disease(vaccine_data.tg)
-            )
-            .ok();
-
-            writeln!(
-                f,
-                "\tName: {}",
-                translate_medicinal_product(vaccine_data.mp)
-            )
-            .ok();
-            writeln!(f, "\tType: {}", translate_vaccine_type(vaccine_data.vp)).ok();
-            writeln!(
-                f,
-                "\tManufacturer : {}",
-                translate_marketing_org(vaccine_data.ma)
-            )
-            .ok();
-
-            writeln!(
-                f,
-                "\tShot {}/{} done {}.",
-                &vaccine_data.dn, &vaccine_data.sd, &vaccine_data.dt
-            )
-            .ok();
-
-            writeln!(
-                f,
-                "Certificate issued by {} ({}):",
-                &vaccine_data.is, &vaccine_data.co
-            )
-            .ok();
+            vaccine_data.fmt(f).ok();
         }
 
         writeln!(
@@ -66,6 +72,12 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
         .ok();
 
         writeln!(f)
+    }
+}
+
+impl Display for DigitalGreenCertificate<Verified<'_>> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.hcert_payload().fmt(f)
     }
 }
 
