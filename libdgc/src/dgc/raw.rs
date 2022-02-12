@@ -17,7 +17,6 @@ impl<'r> FromStr for DigitalGreenCertificate<Raw<'r>> {
 
         match version {
             "HC1" => {
-
                 log::debug!(target:"dgc", "Certificate version: HC1");
                 log::trace!(target: "dgc", "Before bas45 decoding: {} bytes", data.len());
 

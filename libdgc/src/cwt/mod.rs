@@ -1,4 +1,4 @@
-use libkeystore::{KeystoreError, KeyStore};
+use libkeystore::{KeyStore, KeystoreError};
 use serde_cbor::{self, error::Error as CBORError};
 
 mod sign;
@@ -10,7 +10,7 @@ use crate::Generic_Headers;
 
 use asn1_der::{
     typed::{DerEncodable, SequenceVec},
-    VecBacking, DerObject,
+    DerObject, VecBacking,
 };
 
 #[derive(Debug)]
@@ -45,7 +45,6 @@ pub fn verify_signature(
         .pubkey_for_signature(&kid)
         .map_err(PubKeyNotFoundOrInvalid)?;
 
-
     let mut signature_der = vec![];
 
     signature_to_der(signature, &mut signature_der)
@@ -59,14 +58,15 @@ pub fn verify_signature(
 }
 
 fn signature_to_der(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'static str> {
-
     let len = raw_signature.len() / 2;
 
     let mut r_bufs = (vec![], raw_signature[..len].to_vec());
     let mut s_bufs = (vec![], raw_signature[len..].to_vec());
 
-    fn to_der_integer<'buf>(buffer: &'buf mut Vec<u8>, bytes: &mut Vec<u8>) -> Result<DerObject<'buf>, asn1_der::Asn1DerError> {
-
+    fn to_der_integer<'buf>(
+        buffer: &'buf mut Vec<u8>,
+        bytes: &mut Vec<u8>,
+    ) -> Result<DerObject<'buf>, asn1_der::Asn1DerError> {
         let backing_vec = VecBacking(buffer);
 
         if bytes[0] & 0x80 > 0 {
@@ -78,12 +78,12 @@ fn signature_to_der(raw_signature: &[u8], dest: &mut Vec<u8>) -> Result<(), &'st
     }
 
     let r = to_der_integer(&mut r_bufs.0, &mut r_bufs.1)
-                        .ok()
-                        .ok_or("Failed to encode `r` to DER.")?;
+        .ok()
+        .ok_or("Failed to encode `r` to DER.")?;
 
     let s = to_der_integer(&mut s_bufs.0, &mut s_bufs.1)
-                        .ok()
-                        .ok_or("Failed to encode `s` to DER.")?;
+        .ok()
+        .ok_or("Failed to encode `s` to DER.")?;
 
     let sequence = SequenceVec(vec![r, s]);
 

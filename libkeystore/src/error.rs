@@ -1,4 +1,3 @@
-
 #[derive(Debug)]
 pub enum KeystoreError {
     FileError(std::io::Error),
@@ -6,13 +5,12 @@ pub enum KeystoreError {
     DownloadError(reqwest::Error),
     KeyNotFound,
     X509ParsingFailed(X509ParsingError),
-
 }
 
 #[derive(Debug)]
 pub enum X509ParsingError {
     WebPki(webpki::Error),
-    X509Parser(String)
+    X509Parser(String),
 }
 
 impl From<webpki::Error> for KeystoreError {

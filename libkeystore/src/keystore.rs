@@ -5,7 +5,6 @@ use x509_parser::prelude::*;
 
 use crate::error::{KeystoreError, X509ParsingError};
 
-
 type KeyContent = [String; 1];
 type KeyStoreInner = HashMap<String, KeyContent>;
 
@@ -20,7 +19,6 @@ impl KeyStore {
         for (id, pubkey) in raw_inner {
             if let Some(content) = pubkey.get(0) {
                 if let Ok(decoded) = base64::decode(content) {
-
                     log::trace!(target: "keystore", "Added public key with id: {}", id);
 
                     inner.insert(id, decoded);
@@ -40,28 +38,26 @@ impl KeyStore {
 
         EndEntityCert::try_from(key_entry.as_slice())
             .map_err(X509ParsingError::WebPki)
-            .map_err(X509ParsingFailed)        
+            .map_err(X509ParsingFailed)
     }
 
     pub fn pubkey_as_cert(&self, kid: &str) -> Result<X509Certificate, KeystoreError> {
-
         use KeystoreError::{KeyNotFound, X509ParsingFailed};
 
         let key_entry = self.inner.get(kid).ok_or(KeyNotFound)?;
 
         X509Certificate::from_der(key_entry.as_slice())
             .map(|(_, cert)| cert)
-            .map_err(|e|  X509ParsingError::X509Parser(e.to_string()))
-            .map_err(X509ParsingFailed)   
+            .map_err(|e| X509ParsingError::X509Parser(e.to_string()))
+            .map_err(X509ParsingFailed)
     }
 
     pub fn pubkeys(&self) -> impl Iterator<Item = (&str, X509Certificate)> {
-        
-        self.inner.iter().filter_map(|(k,v)| {
+        self.inner.iter().filter_map(|(k, v)| {
             X509Certificate::from_der(v)
-                .map(|(_, cert)| cert )
+                .map(|(_, cert)| cert)
                 .ok()
-                .map(|c| (k.as_str(), c) )
+                .map(|c| (k.as_str(), c))
         })
     }
 }

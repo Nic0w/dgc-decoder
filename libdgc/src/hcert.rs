@@ -1,6 +1,6 @@
 use std::{collections::HashMap, fmt, marker::PhantomData};
 
-use chrono::{DateTime, Utc, TimeZone};
+use chrono::{DateTime, TimeZone, Utc};
 use serde::{
     de::{self, Deserializer, MapAccess, Visitor},
     Deserialize,
@@ -28,7 +28,7 @@ impl HCertPayload<'_> {
 
     pub fn expiring_at(&self) -> DateTime<Utc> {
         Utc.timestamp(self.exp as i64, 0)
-    }    
+    }
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -43,7 +43,7 @@ pub struct CertificateData<'hcert> {
     pub nam: Person<'hcert>,
 
     pub v: Option<[Vaccine<'hcert>; 1]>,
-    pub t: Option<[Test; 1]>,
+    pub t: Option<[Test<'hcert>; 1]>,
     pub r: Option<[Recovery; 1]>,
 }
 
@@ -85,6 +85,7 @@ pub struct Vaccine<'cert> {
 
     /// Date of vaccination
     pub dt: &'cert str,
+
     /// Country
     pub co: &'cert str,
 
@@ -96,7 +97,38 @@ pub struct Vaccine<'cert> {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Test {}
+pub struct Test<'cert> {
+    /// Targeted agent or disease
+    pub tg: &'cert str,
+
+    ///The type of test
+    pub tt: &'cert str,
+
+    //Test name (nucleic acid amplification tests only)
+    pub nm: Option<&'cert str>,
+
+    //Test device identifier(rapid antigen tests only)
+    pub ma: Option<&'cert str>,
+
+    //Date and time of the test sample collection
+    ///TODO: parse as DateTime<Utc>
+    pub sc: &'cert str,
+
+    ///Result of the test
+    pub tr: &'cert str,
+
+    ///Testing centre or facility
+    pub tc: &'cert str,
+
+    ///Member State or third country in which the test was carried out
+    pub co: &'cert str,
+
+    /// Certificate Issuer
+    pub is: &'cert str,
+
+    /// Certificate Identifier
+    pub ci: &'cert str,
+}
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Recovery {}

@@ -1,4 +1,7 @@
-use std::{path::Path, fmt::{Display, Pointer}};
+use std::{
+    fmt::{Display, Pointer},
+    path::Path,
+};
 use std::{iter::Iterator, str::FromStr};
 
 use image::ImageError;
@@ -24,7 +27,8 @@ pub enum ImageDecodingFailure<'i> {
     InvalidQRCode(DecodeError<'i>),
 }
 
-type ImageDecodingResult<'i> = Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure<'i>>;
+type ImageDecodingResult<'i> =
+    Result<Vec<DigitalGreenCertificate<Raw<'i>>>, ImageDecodingFailure<'i>>;
 
 pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i> {
     use ImageDecodingFailure::*;
@@ -44,16 +48,16 @@ pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i
         .iter()
         .map(|qrcode| DigitalGreenCertificate::<Raw>::from_str(qrcode.data()))
         .inspect(|res| {
-
             match res {
-                Ok(raw) => { 
+                Ok(raw) => {
                     log::trace!(target:"dgc", "Decoded one QR code: {} bytes", raw.buf_len());
-                },
-                Err(_) => log::warn!(target:"dgc", "Found one QR code that was not a valid certificate."),
+                }
+                Err(_) => {
+                    log::warn!(target:"dgc", "Found one QR code that was not a valid certificate.")
+                }
             }
 
             count += 1;
-
         })
         .collect();
 
@@ -64,13 +68,14 @@ pub fn decode_image<'i, P: AsRef<Path>>(image_path: P) -> ImageDecodingResult<'i
 
 impl Display for ImageDecodingFailure<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        
         use ImageDecodingFailure::*;
 
         match self {
             BadImage(img_error) => img_error.fmt(f),
             ScannerFailure(scanner_error) => match scanner_error {
-                ZBarErrorType::Simple(code) => write!(f, "ZBar failed to scan image; error code: {}", code),
+                ZBarErrorType::Simple(code) => {
+                    write!(f, "ZBar failed to scan image; error code: {}", code)
+                }
                 ZBarErrorType::Complex(e) => e.fmt(f),
             },
             InvalidQRCode(decoding_error) => write!(f, "{:?}", decoding_error),
