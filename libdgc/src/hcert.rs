@@ -111,7 +111,7 @@ pub struct Test<'cert> {
     pub ma: Option<&'cert str>,
 
     //Date and time of the test sample collection
-    ///TODO: parse as DateTime<Utc>
+    ///TODO: parse as DateTime<Utc> ?
     pub sc: &'cert str,
 
     ///Result of the test
