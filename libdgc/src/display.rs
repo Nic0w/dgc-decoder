@@ -1,50 +1,60 @@
 use std::fmt::{self, Display};
 
-use crate::{dgc::{DigitalGreenCertificate, Verified}, hcert::{HCertPayload, Vaccine}};
+use crate::{
+    dgc::{DigitalGreenCertificate, Verified},
+    hcert::{HCertPayload, Test, Vaccine},
+};
 
 impl Display for Vaccine<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Vaccine data:").ok();
 
-        writeln!(
-            f,
-            "\tTargeted disease: {}",
-            translate_disease(self.tg)
-        )
-        .ok();
+        writeln!(f, "\tTargeted disease: {}", translate_disease(self.tg)).ok();
 
-        writeln!(
-            f,
-            "\tName: {}",
-            translate_medicinal_product(self.mp)
-        )
-        .ok();
+        writeln!(f, "\tName: {}", translate_medicinal_product(self.mp)).ok();
         writeln!(f, "\tType: {}", translate_vaccine_type(self.vp)).ok();
-        writeln!(
-            f,
-            "\tManufacturer : {}",
-            translate_marketing_org(self.ma)
-        )
-        .ok();
+        writeln!(f, "\tManufacturer : {}", translate_marketing_org(self.ma)).ok();
 
-        writeln!(
-            f,
-            "\tShot {}/{} done {}.",
-            &self.dn, &self.sd, &self.dt
-        )
-        .ok();
+        writeln!(f, "\tShot {}/{} done {}.", &self.dn, &self.sd, &self.dt).ok();
 
-        writeln!(
-            f,
-            "Certificate issued by {} ({}):",
-            &self.is, &self.co
-        )
+        writeln!(f, "Certificate issued by {} ({}):", &self.is, &self.co)
+    }
+}
+
+impl Display for Test<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Test data:").ok();
+
+        writeln!(f, "\tTargeted disease: {}", translate_disease(self.tg)).ok();
+
+        writeln!(f, "\tTest type: {}", translate_test_type(self.tt)).ok();
+
+        match (self.nm, self.ma) {
+            (Some(nm), None) => writeln!(f, "\tTest name: {}", nm).ok(),
+
+            (None, Some(ma)) =>
+            //TODO: translate that field
+            {
+                writeln!(f, "\tTest device: {}", ma).ok()
+            }
+
+            invalid => panic!("Invalid combination: {:?}", invalid),
+        };
+
+        writeln!(f, "\tSample collection date: {}", self.sc).ok();
+
+        writeln!(f, "\tTest result: {}", translate_test_result(self.tr)).ok();
+
+        writeln!(f, "\tTest facility: {}", self.tc).ok();
+
+        writeln!(f, "\tTest id: {}", self.ci).ok();
+
+        writeln!(f, "Certificate issued by {} ({}):", &self.is, &self.co)
     }
 }
 
 impl Display for HCertPayload<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-
         let cert = &self.hcert[&1];
         let person = &cert.nam;
         let dob = &cert.dob;
@@ -60,6 +70,10 @@ impl Display for HCertPayload<'_> {
 
         if let Some([vaccine_data]) = &cert.v {
             vaccine_data.fmt(f).ok();
+        }
+
+        if let Some([test_data]) = &cert.t {
+            test_data.fmt(f).ok();
         }
 
         writeln!(
@@ -80,36 +94,6 @@ impl Display for DigitalGreenCertificate<Verified<'_>> {
         self.hcert_payload().fmt(f)
     }
 }
-
-/*pub fn to_human_readable(dgc: &DigitalGreenCertificate) {
-
-    let cert = &dgc.hcert[&1];
-    let person = &cert.nam;
-
-    println!("Person: {} {} (born {})", person.sn, person.gn, cert.dob);
-
-    if let Some([vaccine_data]) = &cert.v {
-
-        println!("Targeted disease: {}", translate_disease(&vaccine_data.tg));
-        println!("");
-
-        println!("Vaccine data:");
-        println!("\tName: {}", translate_medicinal_product(&vaccine_data.mp));
-        println!("\tType: {}", translate_vaccine_type(&vaccine_data.vp));
-        println!("\tManufacturer : {}", translate_marketing_org(&vaccine_data.ma));
-
-        println!("");
-        println!("Shot {}/{} done {}.", &vaccine_data.dn, &vaccine_data.sd, &vaccine_data.dt);
-
-        println!("Certificate issued by {} ({})", &vaccine_data.is, &vaccine_data.co)
-    }
-    else {
-        print!("not found!");
-    }
-
-
-
-}*/
 
 pub fn translate_disease(tg: &str) -> &str {
     match tg {
@@ -168,5 +152,22 @@ pub fn translate_marketing_org(ma: &str) -> &str {
         "Bharat-Biotech" => "Bharat Biotech",
 
         _ => ma,
+    }
+}
+
+pub fn translate_test_type(tt: &str) -> &str {
+    match tt {
+        "LP6464-4" => "Nucleic acid amplification with probe detection",
+        "LP217198-3" => "Rapid immunoassay",
+
+        _ => tt,
+    }
+}
+
+pub fn translate_test_result(tr: &str) -> &str {
+    match tr {
+        "260415000" => "Not detected",
+        "260373001" => "Detected",
+        _ => tr,
     }
 }
