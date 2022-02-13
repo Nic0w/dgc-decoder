@@ -2,7 +2,7 @@ use std::fmt::{self, Display};
 
 use crate::{
     dgc::{DigitalGreenCertificate, Verified},
-    hcert::{HCertPayload, Test, Vaccine},
+    hcert::{HCertPayload, Test, Vaccine, Recovery},
 };
 
 impl Display for Vaccine<'_> {
@@ -53,6 +53,24 @@ impl Display for Test<'_> {
     }
 }
 
+impl Display for Recovery<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "Recovery data:").ok();
+
+        writeln!(f, "\tTargeted disease: {}", translate_disease(self.tg)).ok();
+
+        writeln!(f, "\tDate of first NAAT positive test: {}", self.fr).ok();
+
+        writeln!(f, "\tCertificate valid from: {}", self.df).ok();
+
+        writeln!(f, "\tCertificate valid until: {}", self.du).ok();
+
+        writeln!(f, "\tCertificate id: {}", self.ci).ok();
+
+        writeln!(f, "Certificate issued by {} ({}):", &self.is, &self.co)
+    }
+}
+
 impl Display for HCertPayload<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cert = &self.hcert[&1];
@@ -70,10 +88,10 @@ impl Display for HCertPayload<'_> {
 
         if let Some([vaccine_data]) = &cert.v {
             vaccine_data.fmt(f).ok();
-        }
-
-        if let Some([test_data]) = &cert.t {
+        } else if let Some([test_data]) = &cert.t {
             test_data.fmt(f).ok();
+        } else if let Some([recovery_data]) = &cert.r {
+            recovery_data.fmt(f).ok();
         }
 
         writeln!(

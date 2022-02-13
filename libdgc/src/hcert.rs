@@ -44,7 +44,7 @@ pub struct CertificateData<'hcert> {
 
     pub v: Option<[Vaccine<'hcert>; 1]>,
     pub t: Option<[Test<'hcert>; 1]>,
-    pub r: Option<[Recovery; 1]>,
+    pub r: Option<[Recovery<'hcert>; 1]>,
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -131,7 +131,32 @@ pub struct Test<'cert> {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Recovery {}
+pub struct Recovery<'cert> {
+
+    /// Disease or agent from which the holder has recovered
+    pub tg: &'cert str,
+
+    /// Date of the holder’s first positive NAAT test result
+    /// TODO: parse date ?
+    pub fr: &'cert str,
+
+    ///Member State or third country in which the test was carried out
+    pub co: &'cert str,
+
+    /// Certificate Issuer
+    pub is: &'cert str,
+
+    /// Certificate valid from
+    /// TODO: parse date ?
+    pub df: &'cert str,
+
+    /// Certificate valid until 
+    /// TODO: parse date ?
+    pub du: &'cert str,
+
+    /// Certificate Identifier
+    pub ci: &'cert str,
+}
 
 const FIELDS: &[&str] = &["iss", "iat", "exp", "hcert"];
 
